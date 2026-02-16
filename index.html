@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DC 6084 — FPA / LPA Dashboard</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- ========== HEADER ========== -->
+  <header class="header" role="banner">
+    <h1>📊 DC 6084 — FPA / LPA Dashboard</h1>
+    <span class="date-badge" aria-label="Report date">Feb 11, 2026</span>
+  </header>
+
+  <!-- ========== TAB NAVIGATION ========== -->
+  <nav class="tab-nav" role="tablist" aria-label="Dashboard reports">
+    <button
+      class="tab-btn"
+      id="tab-fpa-lpa"
+      role="tab"
+      aria-selected="true"
+      aria-controls="panel-fpa-lpa"
+      tabindex="0"
+    >
+      FPA / LPA Report
+    </button>
+    <button
+      class="tab-btn"
+      id="tab-roster"
+      role="tab"
+      aria-selected="false"
+      aria-controls="panel-roster"
+      tabindex="-1"
+    >
+      Associate Roster
+    </button>
+  </nav>
+
+  <!-- ========== FILTERS ========== -->
+  <section class="filters" aria-label="Report filters">
+    <div class="filter-group">
+      <label for="filter-area">Area</label>
+      <select id="filter-area">
+        <option value="All">All Areas</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label for="filter-shift">Shift</label>
+      <select id="filter-shift">
+        <option value="All">All Shifts</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label for="filter-role">Role</label>
+      <select id="filter-role">
+        <option value="All">All Roles</option>
+      </select>
+    </div>
+
+    <!-- Roster Upload -->
+    <div class="filter-group">
+      <label>Roster</label>
+      <button id="btn-upload-roster" class="btn-roster" type="button">
+        👥 Upload Roster
+      </button>
+      <input type="file" id="file-roster" accept=".xlsx,.xls,.csv" class="sr-only">
+    </div>
+
+    <!-- FPA/LPA Import Button -->
+    <div class="filter-group">
+      <label>Reports</label>
+      <button id="btn-open-import" class="btn-import" type="button">
+        📂 Load FPA / LPA
+      </button>
+    </div>
+  </section>
+
+  <!-- Roster Status -->
+  <div id="roster-status" class="roster-status" role="status"></div>
+  <div style="margin:0 24px 4px; text-align:right;">
+    <button id="btn-clear-roster" class="btn-clear" type="button">Reset to Sample Roster</button>
+  </div>
+
+  <!-- Import Status -->
+  <div id="import-status" class="import-status" style="display:none;" role="alert"></div>
+
+  <!-- Import Modal Overlay -->
+  <div id="import-modal-overlay" class="modal-overlay" style="display:none;"></div>
+
+  <!-- Import Modal -->
+  <div id="import-modal" class="modal" aria-hidden="true" role="dialog"
+       aria-labelledby="modal-title">
+    <div class="modal-header">
+      <h2 id="modal-title">📂 Load FPA / LPA Reports</h2>
+      <button id="btn-close-modal" class="modal-close" aria-label="Close">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p class="modal-desc">Select FPAOF &amp; FPALD report files. Accepts <strong>.xlsx</strong>, <strong>.xls</strong>, or <strong>.csv</strong>.<br>
+        Names are matched from the saved <strong>Roster</strong> using User ID.</p>
+
+      <div class="modal-file-group">
+        <label for="file-fpaof" class="modal-file-label">
+          <span class="modal-file-icon">📦</span>
+          <span class="modal-file-text">
+            <strong>FPAOF</strong> (Orderfillers)
+            <small>User ID, Date, FPA Minutes, LPA Minutes — names pulled from Roster</small>
+          </span>
+        </label>
+        <input type="file" id="file-fpaof" accept=".xlsx,.xls,.csv" class="modal-file-input">
+      </div>
+
+      <div class="modal-file-group">
+        <label for="file-fpald" class="modal-file-label">
+          <span class="modal-file-icon">🚜</span>
+          <span class="modal-file-text">
+            <strong>FPALD</strong> (Lift Drivers)
+            <small>User ID, Date, FPA Minutes, LPA Minutes — names pulled from Roster</small>
+          </span>
+        </label>
+        <input type="file" id="file-fpald" accept=".xlsx,.xls,.csv" class="modal-file-input">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button id="btn-run-import" class="btn-primary" type="button">✅ Import All</button>
+    </div>
+  </div>
+
+  <!-- ========== FPA / LPA REPORT PANEL ========== -->
+  <div
+    class="tab-panel"
+    id="panel-fpa-lpa"
+    role="tabpanel"
+    aria-labelledby="tab-fpa-lpa"
+    aria-hidden="false"
+  >
+    <!-- Summary Cards -->
+    <div class="summary-cards">
+      <div class="card card--blue">
+        <div class="card-value" id="card-total">0</div>
+        <div class="card-label">Total Associates</div>
+      </div>
+      <div class="card card--green">
+        <div class="card-value" id="card-fpa-above">0 / 0</div>
+        <div class="card-label">FPA ≤ 16 min (On Goal)</div>
+      </div>
+      <div class="card card--green">
+        <div class="card-value" id="card-lpa-above">0 / 0</div>
+        <div class="card-label">LPA ≤ 14 min (On Goal)</div>
+      </div>
+      <div class="card card--yellow">
+        <div class="card-value" id="card-both-above">0 / 0</div>
+        <div class="card-label">Both On Goal</div>
+      </div>
+    </div>
+
+    <!-- Area Breakdown -->
+    <h2 class="section-title">🏢 Breakdown by Area</h2>
+    <div class="table-container">
+      <table aria-label="FPA and LPA breakdown by area">
+        <thead>
+          <tr>
+            <th scope="col">Area</th>
+            <th scope="col">Shift</th>
+            <th scope="col">Total</th>
+            <th scope="col">FPA On Goal</th>
+            <th scope="col">FPA %</th>
+            <th scope="col">LPA On Goal</th>
+            <th scope="col">LPA %</th>
+          </tr>
+        </thead>
+        <tbody id="area-breakdown-tbody"></tbody>
+      </table>
+    </div>
+
+    <!-- Score Cards per Area + Shift -->
+    <h2 class="section-title">🏆 Score Cards by Area &amp; Shift <span style="font-weight:400;font-size:0.85rem;color:#555;">(click to expand)</span></h2>
+    <div id="scorecards-container" class="scorecards-container"></div>
+
+    <!-- Full Data Table -->
+    <h2 class="section-title">📋 All FPA / LPA Data</h2>
+    <div class="table-container">
+      <table aria-label="Complete FPA and LPA data for all associates">
+        <thead id="fpa-lpa-thead"></thead>
+        <tbody id="fpa-lpa-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ========== ASSOCIATE ROSTER PANEL ========== -->
+  <div
+    class="tab-panel"
+    id="panel-roster"
+    role="tabpanel"
+    aria-labelledby="tab-roster"
+    aria-hidden="true"
+  >
+    <div class="summary-cards">
+      <div class="card card--blue">
+        <div class="card-value" id="roster-count">0</div>
+        <div class="card-label">Associates in Roster</div>
+      </div>
+    </div>
+
+    <h2 class="section-title">👥 Associate Roster</h2>
+    <div class="table-container">
+      <table aria-label="Associate roster">
+        <thead>
+          <tr>
+            <th scope="col">User ID</th>
+            <th scope="col">First Name</th>
+            <th scope="col">Last Name</th>
+            <th scope="col">Area</th>
+            <th scope="col">Shift</th>
+            <th scope="col">Role</th>
+          </tr>
+        </thead>
+        <tbody id="roster-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" 
+          onerror="console.warn('SheetJS CDN blocked - import will use fallback');"></script>
+  <script src="import.js"></script>
+  <script>
+    // Diagnostic: verify data loaded
+    console.log('Roster count:', ASSOCIATE_ROSTER.length);
+    console.log('FPA/LPA count:', FPA_LPA_DATA.length);
+    if (ASSOCIATE_ROSTER.length > 0) console.log('First roster entry:', ASSOCIATE_ROSTER[0]);
+    if (FPA_LPA_DATA.length > 0) console.log('First FPA entry:', FPA_LPA_DATA[0]);
+  </script>
+</body>
+</html>
