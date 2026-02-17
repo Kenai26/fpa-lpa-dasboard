@@ -17,7 +17,6 @@ const AREAS = [
   'MP 1st',   'MP 2nd',   'MP 4th',   'MP 5th',
 ];
 
-const BASE_AREAS = ['Dry', 'FDD', 'MP'];
 const SHIFTS = ['1st', '2nd', '4th', '5th'];
 const ROLES  = ['Orderfiller', 'Lift Driver'];
 

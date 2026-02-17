@@ -105,7 +105,7 @@ function getFilterValues() {
 function applyFilters(records) {
   const { area, shift, role } = getFilterValues();
   return records.filter(r =>
-    (area  === 'All' || baseArea(r.area) === area) &&
+    (area  === 'All' || r.area  === area) &&
     (shift === 'All' || r.shift === shift) &&
     (role  === 'All' || r.role  === role)
   );
@@ -167,35 +167,33 @@ function renderSummaryCards(filtered) {
 function renderAreaBreakdown(filtered) {
   const tbody = dom.areaBreakdownBody();
 
-  // Group by base area (Dry, FDD, MP), then by shift suffix (1, 2, 4, 5)
-  const depts = [...new Set(AREAS.map(a => baseArea(a)))];
-  const shiftSuffixes = ['1st', '2nd', '4th', '5th'];
+  // Group by area, then by shift — all values pulled from the data itself
+  const groupKey = (r) => `${r.area}|||${r.shift}`;
+  const groups = new Map();
+  filtered.forEach(r => {
+    const key = groupKey(r);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(r);
+  });
 
   const rows = [];
-  for (const dept of depts) {
-    for (const suffix of shiftSuffixes) {
-      const fullArea = `${dept} ${suffix}`;
-      if (!AREAS.includes(fullArea)) continue;
+  for (const [key, records] of groups) {
+    const [area, shift] = key.split('|||');
+    const { total, fpaGood, lpaGood } = calcStats(records);
+    const fpaPct = Math.round((fpaGood / total) * 100);
+    const lpaPct = Math.round((lpaGood / total) * 100);
 
-      const records = filtered.filter(r => r.area === fullArea);
-      if (records.length === 0) continue;
-
-      const { total, fpaGood, lpaGood } = calcStats(records);
-      const fpaPct = Math.round((fpaGood / total) * 100);
-      const lpaPct = Math.round((lpaGood / total) * 100);
-
-      rows.push(`
-        <tr>
-          <td><strong>${dept}</strong></td>
-          <td>${shiftNum(suffix)}</td>
-          <td>${total}</td>
-          <td>${fpaGood} / ${total}</td>
-          <td><span class="badge ${fpaPct >= 80 ? 'badge--pass' : 'badge--fail'}">${fpaPct}%</span></td>
-          <td>${lpaGood} / ${total}</td>
-          <td><span class="badge ${lpaPct >= 80 ? 'badge--pass' : 'badge--fail'}">${lpaPct}%</span></td>
-        </tr>
-      `);
-    }
+    rows.push(`
+      <tr>
+        <td><strong>${area}</strong></td>
+        <td>${shift}</td>
+        <td>${total}</td>
+        <td>${fpaGood} / ${total}</td>
+        <td><span class="badge ${fpaPct >= 80 ? 'badge--pass' : 'badge--fail'}">${fpaPct}%</span></td>
+        <td>${lpaGood} / ${total}</td>
+        <td><span class="badge ${lpaPct >= 80 ? 'badge--pass' : 'badge--fail'}">${lpaPct}%</span></td>
+      </tr>
+    `);
   }
 
   tbody.innerHTML = rows.length > 0 ? rows.join('') : emptyRow(7, 'No data for selected filters.');
@@ -248,27 +246,30 @@ function buildBottom5Html(records, metric, label, role) {
 function renderScoreCards(filtered) {
   const container = dom.scorecardsContainer();
 
-  // Group by area only — area name already encodes the shift
+  // Group by area + shift dynamically from the data
+  const groupKey = (r) => `${r.area}|||${r.shift}`;
   const grouped = new Map();
-  AREAS.forEach(a => grouped.set(a, []));
   filtered.forEach(r => {
-    if (grouped.has(r.area)) grouped.get(r.area).push(r);
+    const key = groupKey(r);
+    if (!grouped.has(key)) grouped.set(key, []);
+    grouped.get(key).push(r);
   });
 
   let html = '';
 
-  for (const [area, records] of grouped) {
+  for (const [key, records] of grouped) {
+    const [area, shift] = key.split('|||');
     if (records.length === 0) continue;
 
     const { total, fpaGood, lpaGood, bothGood } = calcStats(records);
-    const cardId = `sc-${area}`.replace(/[^a-zA-Z0-9]/g, '-');
+    const cardId = `sc-${area}-${shift}`.replace(/[^a-zA-Z0-9]/g, '-');
 
       html += `
         <div class="scorecard" id="${cardId}" aria-expanded="false">
           <button class="scorecard-header" aria-controls="${cardId}-body"
                   onclick="toggleScorecard('${cardId}')">
             <span class="scorecard-title">
-              <span>🏢 ${baseArea(area)} ${shiftNum(area)}</span>
+              <span>🏢 ${area} — ${shift} Shift</span>
             </span>
             <span class="scorecard-stats">
               <span class="stat">👥 ${total}</span>
@@ -333,7 +334,7 @@ const SORT_COLUMNS = [
   { key: '_firstName', label: 'First Name', type: 'string' },
   { key: '_lastName',  label: 'Last Name',  type: 'string' },
   { key: '_baseArea',  label: 'Area',       type: 'string' },
-  { key: '_shiftNum',  label: 'Shift',      type: 'string' },
+  { key: '_shift',     label: 'Shift',      type: 'string' },
   { key: 'role',       label: 'Role',       type: 'string' },
   { key: 'fpaMinutes', label: 'FPA',        type: 'number' },
   { key: 'lpaMinutes', label: 'LPA',        type: 'number' },
@@ -387,8 +388,8 @@ function renderFpaLpaTable(filtered) {
       ...r,
       _firstName: r.firstName,
       _lastName:  r.lastName,
-      _baseArea:  baseArea(r.area),
-      _shiftNum:  shiftNum(r.shift),
+      _baseArea:  r.area,
+      _shift:     r.shift,
       _overall:   (fpaPasses(r.fpaMinutes) && lpaPasses(r.lpaMinutes)) ? 'On Goal' : 'Off Goal',
     };
   });
@@ -412,7 +413,7 @@ function renderFpaLpaTable(filtered) {
       <td>${r._firstName}</td>
       <td>${r._lastName}</td>
       <td>${r._baseArea}</td>
-      <td>${r._shiftNum}</td>
+      <td>${r._shift}</td>
       <td>${r.role}</td>
       <td>${r.fpaMinutes} min ${badge(fpaPasses(r.fpaMinutes))}</td>
       <td>${r.lpaMinutes} min ${badge(lpaPasses(r.lpaMinutes))}</td>
@@ -428,7 +429,7 @@ function renderFpaLpaTable(filtered) {
 function renderRoster() {
   const { area, shift, role } = getFilterValues();
   const filtered = ASSOCIATE_ROSTER.filter(r =>
-    (area  === 'All' || baseArea(r.area) === area) &&
+    (area  === 'All' || r.area  === area) &&
     (shift === 'All' || r.shift === shift) &&
     (role  === 'All' || r.role  === role)
   );
@@ -475,8 +476,8 @@ function renderRoster() {
         <td>${r.userId}</td>
         <td>${first}</td>
         <td>${last}</td>
-        <td>${baseArea(r.area)}</td>
-        <td>${shiftNum(r.shift)}</td>
+        <td>${r.area}</td>
+        <td>${r.shift}</td>
         <td>${r.role}</td>
       </tr>
     `;
@@ -525,26 +526,51 @@ function switchTab(selectedBtn) {
    Populate Filters
    ============================================================ */
 
+/**
+ * Dynamically populate filter dropdowns from the current roster.
+ * Called on init and again after every roster upload so options
+ * always reflect whatever areas/shifts/roles are in the data.
+ */
 function populateFilters() {
   const areaSelect  = dom.areaFilter();
   const shiftSelect = dom.shiftFilter();
   const roleSelect  = dom.roleFilter();
 
-  BASE_AREAS.forEach(a => {
+  // Remember current selections so we can restore them after rebuild
+  const prevArea  = areaSelect.value;
+  const prevShift = shiftSelect.value;
+  const prevRole  = roleSelect.value;
+
+  // Clear existing options (keep the "All" default)
+  areaSelect.innerHTML  = '<option value="All">All Areas</option>';
+  shiftSelect.innerHTML = '<option value="All">All Shifts</option>';
+  roleSelect.innerHTML  = '<option value="All">All Roles</option>';
+
+  // Extract unique values from the live roster
+  const areas  = [...new Set(ASSOCIATE_ROSTER.map(r => String(r.area || '').trim()).filter(Boolean))].sort();
+  const shifts = [...new Set(ASSOCIATE_ROSTER.map(r => String(r.shift || '').trim()).filter(Boolean))].sort();
+  const roles  = [...new Set(ASSOCIATE_ROSTER.map(r => String(r.role || '').trim()).filter(Boolean))].sort();
+
+  areas.forEach(a => {
     const opt = document.createElement('option');
     opt.value = a; opt.textContent = a;
     areaSelect.appendChild(opt);
   });
-  SHIFTS.forEach(s => {
+  shifts.forEach(s => {
     const opt = document.createElement('option');
     opt.value = s; opt.textContent = `${s} Shift`;
     shiftSelect.appendChild(opt);
   });
-  ROLES.forEach(r => {
+  roles.forEach(r => {
     const opt = document.createElement('option');
     opt.value = r; opt.textContent = r;
     roleSelect.appendChild(opt);
   });
+
+  // Restore previous selections if they still exist
+  if (areas.includes(prevArea))   areaSelect.value  = prevArea;
+  if (shifts.includes(prevShift)) shiftSelect.value = prevShift;
+  if (roles.includes(prevRole))   roleSelect.value  = prevRole;
 }
 
 /* ============================================================

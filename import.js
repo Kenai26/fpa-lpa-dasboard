@@ -221,6 +221,7 @@ async function handleRosterUpload(file) {
     parsed.forEach(r => ASSOCIATE_ROSTER.push(r));
     saveRosterToStorage(parsed);
     updateRosterStatus();
+    populateFilters();
     showImportStatus(`\u2705 Roster saved! ${parsed.length} associates loaded. This will persist until you upload a new one.`, true);
     renderAll();
   } catch (err) {
@@ -317,6 +318,7 @@ function initImportUI() {
   // Load saved roster from localStorage on startup
   loadRosterFromStorage();
   updateRosterStatus();
+  populateFilters();
 
   // Clear roster button
   document.getElementById('btn-clear-roster').addEventListener('click', () => {
@@ -325,6 +327,7 @@ function initImportUI() {
     ASSOCIATE_ROSTER.length = 0;
     SAMPLE_ROSTER.forEach(r => ASSOCIATE_ROSTER.push(r));
     updateRosterStatus();
+    populateFilters();
     showImportStatus('\u2705 Reset to sample roster. Upload a real roster when ready.', true);
     renderAll();
   });
