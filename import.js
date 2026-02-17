@@ -28,10 +28,15 @@ const ROSTER_COL_MAP = {
 };
 
 const FPA_COL_MAP = {
-  'user id':     'userId',  'userid':     'userId', 'id':         'userId',
-  'date':        'date',
-  'fpa':         'fpaMinutes', 'fpa minutes':'fpaMinutes', 'fpa mins':'fpaMinutes', 'fpa min':'fpaMinutes',
-  'lpa':         'lpaMinutes', 'lpa minutes':'lpaMinutes', 'lpa mins':'lpaMinutes', 'lpa min':'lpaMinutes',
+  'user id':      'userId',  'userid':      'userId',  'id':           'userId',
+  'user_id':      'userId',  'associate id': 'userId',  'emp id':       'userId',
+  'date':         'date',    'report date':  'date',    'shift date':   'date',
+  'fpa':          'fpaMinutes', 'fpa minutes':  'fpaMinutes', 'fpa mins':  'fpaMinutes',
+  'fpa min':      'fpaMinutes', 'fpa (min)':    'fpaMinutes', 'fpa (mins)':'fpaMinutes',
+  'fpa_minutes':  'fpaMinutes', 'first pick':   'fpaMinutes',
+  'lpa':          'lpaMinutes', 'lpa minutes':  'lpaMinutes', 'lpa mins':  'lpaMinutes',
+  'lpa min':      'lpaMinutes', 'lpa (min)':    'lpaMinutes', 'lpa (mins)':'lpaMinutes',
+  'lpa_minutes':  'lpaMinutes', 'last pick':    'lpaMinutes',
 };
 
 /* ============================================================
@@ -77,9 +82,52 @@ function readFileAsArray(file) {
   });
 }
 
-function getFirstSheetRows(data) {
+function readFileAsText(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => resolve(e.target.result);
+    reader.onerror = () => reject(new Error(`Failed to read ${file.name}`));
+    reader.readAsText(file);
+  });
+}
+
+/** Parse CSV text into array of arrays (handles quoted fields) */
+function parseCsvText(text) {
+  const rows = [];
+  const lines = text.split(/\r?\n/);
+  for (const line of lines) {
+    if (line.trim() === '') continue;
+    const cells = [];
+    let current = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (inQuotes) {
+        if (ch === '"' && line[i + 1] === '"') { current += '"'; i++; }
+        else if (ch === '"') { inQuotes = false; }
+        else { current += ch; }
+      } else {
+        if (ch === '"') { inQuotes = true; }
+        else if (ch === ',') { cells.push(current.trim()); current = ''; }
+        else { current += ch; }
+      }
+    }
+    cells.push(current.trim());
+    rows.push(cells);
+  }
+  return rows;
+}
+
+function getFirstSheetRows(data, file) {
+  // If it's a CSV file, parse directly without SheetJS
+  if (file && /\.csv$/i.test(file.name)) {
+    const decoder = new TextDecoder('utf-8');
+    const text = decoder.decode(data);
+    return parseCsvText(text);
+  }
+  // For Excel files, need SheetJS
   if (typeof XLSX === 'undefined') {
-    throw new Error('SheetJS library not loaded. The CDN may be blocked. Try refreshing or contact IT.');
+    throw new Error('SheetJS library not loaded (CDN may be blocked). Try using .csv files instead, or contact IT.');
   }
   const wb = XLSX.read(data, { type: 'array', cellDates: true });
   return XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1 });
@@ -130,17 +178,89 @@ function parseRoster(rows) {
     .filter(o => o.userId);
 }
 
+/**
+ * Convert a time value to whole minutes.
+ * Handles multiple formats from Excel/CSV reports:
+ *   - "00:12:23" (HH:MM:SS) → 12 min
+ *   - "12:23"    (MM:SS)    → 12 min
+ *   - "16"       (plain)    → 16 min
+ *   - 0.00860... (Excel serial time, e.g. 12m23s ≈ 0.00859) → 12 min
+ *   - Date object from SheetJS (cellDates:true) → extract minutes
+ *   - "16.5"     (decimal minutes) → 17 min (rounded)
+ */
+function parseTimeToMinutes(raw) {
+  if (raw == null || raw === '') return 0;
+
+  // If it's a Date object (SheetJS cellDates:true), extract HH:MM:SS
+  if (raw instanceof Date) {
+    const h = raw.getUTCHours();
+    const m = raw.getUTCMinutes();
+    const s = raw.getUTCSeconds();
+    return Math.round(h * 60 + m + s / 60);
+  }
+
+  const str = String(raw).trim();
+
+  // HH:MM:SS format — "00:12:23" → 12 minutes (rounded with seconds)
+  const hmsMatch = str.match(/^(\d{1,2}):(\d{2}):(\d{2})$/);
+  if (hmsMatch) {
+    const h = parseInt(hmsMatch[1], 10);
+    const m = parseInt(hmsMatch[2], 10);
+    const s = parseInt(hmsMatch[3], 10);
+    return Math.round(h * 60 + m + s / 60);
+  }
+
+  // MM:SS format — "12:23" → 12 minutes (rounded with seconds)
+  const msMatch = str.match(/^(\d{1,3}):(\d{2})$/);
+  if (msMatch) {
+    const m = parseInt(msMatch[1], 10);
+    const s = parseInt(msMatch[2], 10);
+    return Math.round(m + s / 60);
+  }
+
+  // Plain number or decimal — could be minutes or Excel serial time
+  const num = parseFloat(str);
+  if (isNaN(num)) return 0;
+
+  // Excel serial time: 1.0 = 24 hours, so values < 1.0 are fractions of a day
+  // 12 minutes = 12/(24*60) ≈ 0.00833
+  // If the number is less than 1, treat as Excel serial time
+  if (num > 0 && num < 1) {
+    const totalMinutes = num * 24 * 60;
+    return Math.round(totalMinutes);
+  }
+
+  // Otherwise it's already in minutes
+  return Math.round(num);
+}
+
 function parseFpaLpa(rows, role) {
   if (rows.length < 2) return [];
   const mapped = mapHeaders(rows[0], FPA_COL_MAP);
+  console.log('FPA/LPA column mapping:', rows[0].map((h, i) => `"${h}" → ${mapped[i] || 'UNMAPPED'}`));
+
+  // Warn if critical columns are missing
+  if (!mapped.includes('userId'))     console.warn('⚠️ No User ID column found!');
+  if (!mapped.includes('fpaMinutes')) console.warn('⚠️ No FPA column found!');
+  if (!mapped.includes('lpaMinutes')) console.warn('⚠️ No LPA column found!');
+
   return rows.slice(1)
     .filter(r => r.length > 0 && r.some(c => c != null && c !== ''))
     .map(r => {
       const obj = rowToObject(r, mapped);
       obj.userId     = String(obj.userId || '').trim();
       obj.date       = normalizeDate(obj.date || '');
-      obj.fpaMinutes = parseInt(obj.fpaMinutes, 10) || 0;
-      obj.lpaMinutes = parseInt(obj.lpaMinutes, 10) || 0;
+
+      // Get raw cell values for FPA/LPA (could be Date objects from SheetJS)
+      const fpaIdx = mapped.indexOf('fpaMinutes');
+      const lpaIdx = mapped.indexOf('lpaMinutes');
+      const rawFpa = fpaIdx >= 0 && fpaIdx < r.length ? r[fpaIdx] : obj.fpaMinutes;
+      const rawLpa = lpaIdx >= 0 && lpaIdx < r.length ? r[lpaIdx] : obj.lpaMinutes;
+
+      // Handle time formats: "00:12:23", "12:23", "16", Excel serial time, Date objects
+      obj.fpaMinutes = parseTimeToMinutes(rawFpa);
+      obj.lpaMinutes = parseTimeToMinutes(rawLpa);
+      console.log(`Parsed ${obj.userId}: FPA raw="${rawFpa}" → ${obj.fpaMinutes}min, LPA raw="${rawLpa}" → ${obj.lpaMinutes}min`);
       obj.role       = role;
       return obj;
     })
@@ -205,14 +325,17 @@ function updateRosterStatus() {
 async function handleRosterUpload(file) {
   try {
     const data = await readFileAsArray(file);
-    const rows = getFirstSheetRows(data);
+    const rows = getFirstSheetRows(data, file);
+    console.log('Roster headers:', rows[0]);
+    console.log('Roster row count:', rows.length - 1);
     const parsed = parseRoster(rows);
 
     if (parsed.length === 0) {
-      showImportStatus('\u274c Roster: no valid rows found. Check column headers.', false);
+      showImportStatus('\u274c Roster: no valid rows found. Check column headers (need: User ID, Name or First Name/Last Name, Area, Shift, Role).', false);
       return;
     }
 
+    console.log('Parsed roster sample:', parsed[0]);
     ASSOCIATE_ROSTER.length = 0;
     parsed.forEach(r => ASSOCIATE_ROSTER.push(r));
     saveRosterToStorage(parsed);
@@ -221,6 +344,7 @@ async function handleRosterUpload(file) {
     showImportStatus(`\u2705 Roster saved! ${parsed.length} associates loaded. This will persist until you upload a new one.`, true);
     renderAll();
   } catch (err) {
+    console.error('Roster upload error:', err);
     showImportStatus(`\u274c Roster upload failed: ${err.message}`, false);
   }
 }
@@ -238,16 +362,32 @@ async function runImport() {
 
   try {
     if (fpaofInput.files.length > 0) {
-      const data = await readFileAsArray(fpaofInput.files[0]);
-      const parsed = parseFpaLpa(getFirstSheetRows(data), 'Orderfiller');
+      const file = fpaofInput.files[0];
+      console.log('FPAOF file:', file.name, file.type, file.size, 'bytes');
+      const data = await readFileAsArray(file);
+      const rows = getFirstSheetRows(data, file);
+      console.log('FPAOF headers found:', rows[0]);
+      console.log('FPAOF data rows:', rows.length - 1);
+      if (rows.length > 1) console.log('FPAOF first data row:', rows[1]);
+      const parsed = parseFpaLpa(rows, 'Orderfiller');
+      console.log('FPAOF parsed records:', parsed.length);
+      if (parsed.length > 0) console.log('FPAOF sample:', parsed[0]);
       fpaRecords.push(...parsed);
       msgs.push(`\u2705 FPAOF: ${parsed.length} orderfiller records loaded`);
       ok = true;
     }
 
     if (fpaldInput.files.length > 0) {
-      const data = await readFileAsArray(fpaldInput.files[0]);
-      const parsed = parseFpaLpa(getFirstSheetRows(data), 'Lift Driver');
+      const file = fpaldInput.files[0];
+      console.log('FPALD file:', file.name, file.type, file.size, 'bytes');
+      const data = await readFileAsArray(file);
+      const rows = getFirstSheetRows(data, file);
+      console.log('FPALD headers found:', rows[0]);
+      console.log('FPALD data rows:', rows.length - 1);
+      if (rows.length > 1) console.log('FPALD first data row:', rows[1]);
+      const parsed = parseFpaLpa(rows, 'Lift Driver');
+      console.log('FPALD parsed records:', parsed.length);
+      if (parsed.length > 0) console.log('FPALD sample:', parsed[0]);
       fpaRecords.push(...parsed);
       msgs.push(`\u2705 FPALD: ${parsed.length} lift driver records loaded`);
       ok = true;
@@ -256,6 +396,7 @@ async function runImport() {
     if (fpaRecords.length > 0) {
       FPA_LPA_DATA.length = 0;
       fpaRecords.forEach(r => FPA_LPA_DATA.push(r));
+      console.log('FPA_LPA_DATA populated:', FPA_LPA_DATA.length, 'total records');
 
       // Check roster matching
       const rosterIds = new Set(ASSOCIATE_ROSTER.map(r => String(r.userId).trim().toUpperCase()));
@@ -266,7 +407,7 @@ async function runImport() {
           .map(r => r.userId)
       )];
 
-      msgs.push(`\ud83d\udd17 ${matchedIds.length} of ${fpaRecords.length} records matched to roster (names, area, shift, role populated)`);
+      msgs.push(`\ud83d\udd17 ${matchedIds.length} of ${fpaRecords.length} records matched to roster`);
 
       if (unmatchedIds.length > 0) {
         msgs.push(`\u26a0\ufe0f ${unmatchedIds.length} User ID(s) not in Roster: ${unmatchedIds.slice(0, 5).join(', ')}${unmatchedIds.length > 5 ? '...' : ''}`);
@@ -278,6 +419,7 @@ async function runImport() {
     if (ok) renderAll();
 
   } catch (err) {
+    console.error('Import error:', err);
     showImportStatus(`\u274c Import failed: ${err.message}`, false);
   }
 }
@@ -291,7 +433,10 @@ function showImportStatus(html, success) {
   el.innerHTML = html;
   el.className = `import-status ${success ? 'import-ok' : 'import-err'}`;
   el.style.display = 'block';
-  setTimeout(() => { el.style.display = 'none'; }, 8000);
+  // Keep errors visible until next action; auto-hide success after 15s
+  if (success) {
+    setTimeout(() => { el.style.display = 'none'; }, 15000);
+  }
 }
 
 function openImportModal() {
