@@ -50,19 +50,19 @@ function buildRosterMap() {
 /**
  * Join FPA/LPA records with the uploaded roster by User ID.
  * All display fields (name, area, shift, role) come from the roster.
- * Unmatched IDs still appear with "Unknown" so nothing is silently dropped.
+ * Records with no roster match are silently skipped.
  */
 function getEnrichedData() {
   const rosterMap = buildRosterMap();
 
-  const enriched = FPA_LPA_DATA.map(d => {
-    const key   = normalizeId(d.userId);
-    const match = rosterMap.get(key);
+  const enriched = FPA_LPA_DATA
+    .filter(d => rosterMap.has(normalizeId(d.userId)))
+    .map(d => {
+      const match = rosterMap.get(normalizeId(d.userId));
 
-    // Pull first/last name from roster — support both split and combined
-    let firstName = '';
-    let lastName  = '';
-    if (match) {
+      // Pull first/last name from roster — support both split and combined
+      let firstName = '';
+      let lastName  = '';
       if (match.firstName) {
         firstName = match.firstName;
         lastName  = match.lastName || '';
@@ -71,26 +71,23 @@ function getEnrichedData() {
         firstName = parts[0] || '';
         lastName  = parts.slice(1).join(' ') || '';
       }
-    }
 
-    return {
-      userId:     d.userId,
-      date:       d.date        || '',
-      fpaMinutes: d.fpaMinutes  || 0,
-      lpaMinutes: d.lpaMinutes  || 0,
-      // Everything below comes from the ROSTER
-      firstName,
-      lastName,
-      area:       match ? match.area     : 'Unknown',
-      shift:      match ? match.shift    : '',
-      role:       match ? match.role     : (d.role || ''),
-    };
-  });
+      return {
+        userId:     d.userId,
+        date:       d.date        || '',
+        fpaMinutes: d.fpaMinutes  || 0,
+        lpaMinutes: d.lpaMinutes  || 0,
+        firstName,
+        lastName,
+        area:       match.area  || '',
+        shift:      match.shift || '',
+        role:       match.role  || '',
+      };
+    });
 
   // Log for debugging — open DevTools (F12) to verify
-  const matched   = enriched.filter(r => r.name !== 'Unknown').length;
-  const unmatched = enriched.length - matched;
-  console.log(`Enrichment: ${matched} matched, ${unmatched} unmatched out of ${enriched.length} records`);
+  const skipped = FPA_LPA_DATA.length - enriched.length;
+  console.log(`Enrichment: ${enriched.length} matched, ${skipped} skipped (no roster match) out of ${FPA_LPA_DATA.length} records`);
   if (enriched.length > 0) console.log('First enriched record:', enriched[0]);
 
   return enriched;
