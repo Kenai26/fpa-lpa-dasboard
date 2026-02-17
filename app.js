@@ -119,6 +119,22 @@ function badge(passes) {
   return `<span class="badge ${cls}" aria-label="${text}">${text}</span>`;
 }
 
+/** Sort order for shifts — 1st, 2nd, 4th, 5th */
+function shiftSortKey(shift) {
+  const s = String(shift || '').replace(/\D/g, '');
+  return parseInt(s, 10) || 999;
+}
+
+/** Compare two records: shift first, then area alphabetically, then role */
+function compareShiftAreaRole(a, b) {
+  const shiftA = shiftSortKey(a.shift);
+  const shiftB = shiftSortKey(b.shift);
+  if (shiftA !== shiftB) return shiftA - shiftB;
+  const areaComp = String(a.area || '').localeCompare(String(b.area || ''));
+  if (areaComp !== 0) return areaComp;
+  return String(a.role || '').localeCompare(String(b.role || ''));
+}
+
 function emptyRow(cols, msg) {
   return `<tr><td colspan="${cols}" style="text-align:center;padding:20px;">${msg}</td></tr>`;
 }
@@ -150,8 +166,8 @@ function renderSummaryCards(filtered) {
 function renderAreaBreakdown(filtered) {
   const tbody = dom.areaBreakdownBody();
 
-  // Group by area, then by shift — all values pulled from the data itself
-  const groupKey = (r) => `${r.area}|||${r.shift}`;
+  // Group by shift + area
+  const groupKey = (r) => `${r.shift}|||${r.area}`;
   const groups = new Map();
   filtered.forEach(r => {
     const key = groupKey(r);
@@ -159,17 +175,28 @@ function renderAreaBreakdown(filtered) {
     groups.get(key).push(r);
   });
 
+  // Sort group keys by shift → area
+  const sortedKeys = [...groups.keys()].sort((a, b) => {
+    const [shiftA, areaA] = a.split('|||');
+    const [shiftB, areaB] = b.split('|||');
+    return compareShiftAreaRole(
+      { shift: shiftA, area: areaA, role: '' },
+      { shift: shiftB, area: areaB, role: '' }
+    );
+  });
+
   const rows = [];
-  for (const [key, records] of groups) {
-    const [area, shift] = key.split('|||');
+  for (const key of sortedKeys) {
+    const records = groups.get(key);
+    const [shift, area] = key.split('|||');
     const { total, fpaGood, lpaGood } = calcStats(records);
     const fpaPct = Math.round((fpaGood / total) * 100);
     const lpaPct = Math.round((lpaGood / total) * 100);
 
     rows.push(`
       <tr>
-        <td><strong>${area}</strong></td>
-        <td>${shift}</td>
+        <td><strong>${shift}</strong></td>
+        <td>${area}</td>
         <td>${total}</td>
         <td>${fpaGood} / ${total}</td>
         <td><span class="badge ${fpaPct >= 80 ? 'badge--pass' : 'badge--fail'}">${fpaPct}%</span></td>
@@ -229,8 +256,8 @@ function buildBottom5Html(records, metric, label, role) {
 function renderScoreCards(filtered) {
   const container = dom.scorecardsContainer();
 
-  // Group by area + shift dynamically from the data
-  const groupKey = (r) => `${r.area}|||${r.shift}`;
+  // Group by shift + area dynamically from the data
+  const groupKey = (r) => `${r.shift}|||${r.area}`;
   const grouped = new Map();
   filtered.forEach(r => {
     const key = groupKey(r);
@@ -238,10 +265,21 @@ function renderScoreCards(filtered) {
     grouped.get(key).push(r);
   });
 
+  // Sort groups: shift → area
+  const sortedKeys = [...grouped.keys()].sort((a, b) => {
+    const [shiftA, areaA] = a.split('|||');
+    const [shiftB, areaB] = b.split('|||');
+    return compareShiftAreaRole(
+      { shift: shiftA, area: areaA, role: '' },
+      { shift: shiftB, area: areaB, role: '' }
+    );
+  });
+
   let html = '';
 
-  for (const [key, records] of grouped) {
-    const [area, shift] = key.split('|||');
+  for (const key of sortedKeys) {
+    const records = grouped.get(key);
+    const [shift, area] = key.split('|||');
     if (records.length === 0) continue;
 
     const { total, fpaGood, lpaGood, bothGood } = calcStats(records);
@@ -252,7 +290,7 @@ function renderScoreCards(filtered) {
           <button class="scorecard-header" aria-controls="${cardId}-body"
                   onclick="toggleScorecard('${cardId}')">
             <span class="scorecard-title">
-              <span>🏢 ${area} — ${shift} Shift</span>
+              <span>🏢 ${shift} Shift — ${area}</span>
             </span>
             <span class="scorecard-stats">
               <span class="stat">👥 ${total}</span>
@@ -310,14 +348,14 @@ function toggleScorecard(id) {
    Full Data Table — Sortable Columns
    ============================================================ */
 
-const tableSort = { col: 'fpaMinutes', asc: false };
+const tableSort = { col: '_shift', asc: true };
 
 const SORT_COLUMNS = [
   { key: 'userId',     label: 'User ID',    type: 'string' },
   { key: '_firstName', label: 'First Name', type: 'string' },
   { key: '_lastName',  label: 'Last Name',  type: 'string' },
-  { key: '_baseArea',  label: 'Area',       type: 'string' },
   { key: '_shift',     label: 'Shift',      type: 'string' },
+  { key: '_baseArea',  label: 'Area',       type: 'string' },
   { key: 'role',       label: 'Role',       type: 'string' },
   { key: 'fpaMinutes', label: 'FPA',        type: 'number' },
   { key: 'lpaMinutes', label: 'LPA',        type: 'number' },
@@ -377,7 +415,7 @@ function renderFpaLpaTable(filtered) {
     };
   });
 
-  // Sort
+  // Sort — always tie-break with shift → area → role
   const col = SORT_COLUMNS.find(c => c.key === tableSort.col);
   const sorted = [...enriched].sort((a, b) => {
     let va = a[tableSort.col], vb = b[tableSort.col];
@@ -385,9 +423,13 @@ function renderFpaLpaTable(filtered) {
       va = String(va).toLowerCase();
       vb = String(vb).toLowerCase();
     }
-    if (va < vb) return tableSort.asc ? -1 : 1;
-    if (va > vb) return tableSort.asc ? 1 : -1;
-    return 0;
+    let result = 0;
+    if (va < vb) result = -1;
+    else if (va > vb) result = 1;
+    if (!tableSort.asc) result = -result;
+    // Tiebreaker: shift → area → role
+    if (result === 0) result = compareShiftAreaRole(a, b);
+    return result;
   });
 
   tbody.innerHTML = sorted.map(r => {
@@ -397,8 +439,8 @@ function renderFpaLpaTable(filtered) {
       <td>${r.userId}</td>
       <td>${r._firstName}</td>
       <td>${r._lastName}</td>
-      <td>${r._baseArea}</td>
       <td>${r._shift}</td>
+      <td>${r._baseArea}</td>
       <td>${r.role}</td>
       <td>${r.fpaMinutes} min ${badge(fpaPasses(r.fpaMinutes))}</td>
       <td>${r.lpaMinutes} min ${badge(lpaPasses(r.lpaMinutes))}</td>
@@ -443,12 +485,15 @@ function renderRoster() {
 
   const tbody = dom.rosterTableBody();
 
-  if (filtered.length === 0) {
+  // Sort roster: shift → area → role
+  const sorted = [...filtered].sort(compareShiftAreaRole);
+
+  if (sorted.length === 0) {
     tbody.innerHTML = emptyRow(6, 'No associates match selected filters.');
     return;
   }
 
-  tbody.innerHTML = filtered.map(r => {
+  tbody.innerHTML = sorted.map(r => {
     // Use firstName/lastName if set (uploaded roster), otherwise split name
     let first = r.firstName || '';
     let last  = r.lastName  || '';
