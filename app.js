@@ -433,7 +433,27 @@ function renderRoster() {
     (role  === 'All' || r.role  === role)
   );
 
-  dom.rosterCount().textContent = filtered.length;
+  const total = ASSOCIATE_ROSTER.length;
+  const isFiltered = area !== 'All' || shift !== 'All' || role !== 'All';
+  dom.rosterCount().innerHTML = isFiltered
+    ? `${filtered.length} <span style="font-size:0.9rem;font-weight:400;">of ${total}</span>`
+    : `${total}`;
+
+  // Update filter indicator
+  const indicatorEl = document.getElementById('roster-filter-indicator');
+  if (indicatorEl) {
+    if (isFiltered) {
+      const parts = [];
+      if (area  !== 'All') parts.push(`Area: ${area}`);
+      if (shift !== 'All') parts.push(`Shift: ${shift}`);
+      if (role  !== 'All') parts.push(`Role: ${role}`);
+      indicatorEl.innerHTML = `🔍 Filtered by ${parts.join(', ')} — showing ${filtered.length} of ${total} associates`;
+      indicatorEl.style.display = 'block';
+    } else {
+      indicatorEl.style.display = 'none';
+    }
+  }
+
   const tbody = dom.rosterTableBody();
 
   if (filtered.length === 0) {
