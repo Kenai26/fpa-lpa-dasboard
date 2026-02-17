@@ -105,7 +105,7 @@ function getFilterValues() {
 function applyFilters(records) {
   const { area, shift, role } = getFilterValues();
   return records.filter(r =>
-    (area  === 'All' || r.area  === area) &&
+    (area  === 'All' || baseArea(r.area) === area) &&
     (shift === 'All' || r.shift === shift) &&
     (role  === 'All' || r.role  === role)
   );
@@ -428,7 +428,7 @@ function renderFpaLpaTable(filtered) {
 function renderRoster() {
   const { area, shift, role } = getFilterValues();
   const filtered = ASSOCIATE_ROSTER.filter(r =>
-    (area  === 'All' || r.area  === area) &&
+    (area  === 'All' || baseArea(r.area) === area) &&
     (shift === 'All' || r.shift === shift) &&
     (role  === 'All' || r.role  === role)
   );
@@ -530,7 +530,7 @@ function populateFilters() {
   const shiftSelect = dom.shiftFilter();
   const roleSelect  = dom.roleFilter();
 
-  AREAS.forEach(a => {
+  BASE_AREAS.forEach(a => {
     const opt = document.createElement('option');
     opt.value = a; opt.textContent = a;
     areaSelect.appendChild(opt);
