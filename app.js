@@ -14,7 +14,9 @@ const dom = {
   tabPanels:           () => document.querySelectorAll('.tab-panel'),
   cardTotal:           () => document.getElementById('card-total'),
   cardFpaAbove:        () => document.getElementById('card-fpa-above'),
+  cardFpaOff:           () => document.getElementById('card-fpa-off'),
   cardLpaAbove:        () => document.getElementById('card-lpa-above'),
+  cardLpaOff:           () => document.getElementById('card-lpa-off'),
   cardBothAbove:       () => document.getElementById('card-both-above'),
   areaBreakdownBody:   () => document.getElementById('area-breakdown-tbody'),
   scorecardsContainer: () => document.getElementById('scorecards-container'),
@@ -138,9 +140,13 @@ function calcStats(records) {
 
 function renderSummaryCards(filtered) {
   const { total, fpaGood, lpaGood, bothGood } = calcStats(filtered);
+  const fpaOff = total - fpaGood;
+  const lpaOff = total - lpaGood;
   dom.cardTotal().textContent     = total;
   dom.cardFpaAbove().textContent  = `${fpaGood} / ${total}`;
+  dom.cardFpaOff().textContent    = `${fpaOff} / ${total}`;
   dom.cardLpaAbove().textContent  = `${lpaGood} / ${total}`;
+  dom.cardLpaOff().textContent    = `${lpaOff} / ${total}`;
   dom.cardBothAbove().textContent = `${bothGood} / ${total}`;
 }
 
@@ -387,8 +393,10 @@ function renderFpaLpaTable(filtered) {
     return 0;
   });
 
-  tbody.innerHTML = sorted.map(r => `
-    <tr>
+  tbody.innerHTML = sorted.map(r => {
+    const onGoal = fpaPasses(r.fpaMinutes) && lpaPasses(r.lpaMinutes);
+    return `
+    <tr class="${onGoal ? '' : 'row--off-goal'}">
       <td>${r.userId}</td>
       <td>${r._firstName}</td>
       <td>${r._lastName}</td>
@@ -397,9 +405,10 @@ function renderFpaLpaTable(filtered) {
       <td>${r.role}</td>
       <td>${r.fpaMinutes} min ${badge(fpaPasses(r.fpaMinutes))}</td>
       <td>${r.lpaMinutes} min ${badge(lpaPasses(r.lpaMinutes))}</td>
-      <td>${badge(fpaPasses(r.fpaMinutes) && lpaPasses(r.lpaMinutes))}</td>
+      <td>${badge(onGoal)}</td>
     </tr>
-  `).join('');
+  `;
+  }).join('');
 }
 
 /* ============================================================

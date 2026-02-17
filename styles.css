@@ -5,21 +5,21 @@
    ============================================================ */
 
 :root {
-  --wm-blue:        #0071dc;
+  --wm-blue:        #0053e2;
   --wm-blue-dark:   #004f9a;
   --wm-blue-light:  #e6f1fc;
   --wm-yellow:      #ffc220;
-  --wm-green:       #2e7d32;
-  --wm-red:         #c62828;
+  --wm-green:       #2a8703;
+  --wm-red:         #ea1100;
   --wm-gray-100:    #f5f5f5;
   --wm-gray-200:    #e0e0e0;
   --wm-gray-600:    #555555;
   --wm-gray-800:    #222222;
   --wm-white:       #ffffff;
 
-  --color-success:  #2e7d32;
-  --color-danger:   #c62828;
-  --color-warning:  #e65100;
+  --color-success:  #2a8703;
+  --color-danger:   #ea1100;
+  --color-warning:  #995213;
   --color-bg:       var(--wm-gray-100);
   --color-surface:  var(--wm-white);
   --color-text:     var(--wm-gray-800);
@@ -249,17 +249,29 @@ tbody tr:nth-child(even):hover { background: var(--wm-blue-light); }
 .badge--pass {
   background: #e8f5e9;
   color: var(--color-success);
+  border: 1px solid var(--color-success);
 }
 
 .badge--fail {
   background: #ffebee;
   color: var(--color-danger);
+  border: 1px solid var(--color-danger);
+  font-weight: 800;
 }
 
 /* Bottom-5 row highlight */
 tr.bottom-five {
   background: #fff3e0 !important;
   border-left: 4px solid var(--color-warning);
+}
+
+/* Off-goal row highlight in data table */
+tr.row--off-goal {
+  background: #ffebee !important;
+}
+
+tr.row--off-goal:hover {
+  background: #ffcdd2 !important;
 }
 
 /* ----- Bottom 5 mini table grid ----- */
