@@ -52,11 +52,7 @@ function rowToObject(row, mappedHeaders) {
 
 function normalizeArea(raw) {
   if (!raw) return raw;
-  if (AREAS.includes(raw)) return raw;
-  for (const area of AREAS) {
-    if (raw.toUpperCase() === area.toUpperCase()) return area;
-  }
-  return raw;
+  return String(raw).trim();
 }
 
 function normalizeShift(raw) {

@@ -120,26 +120,6 @@ function badge(passes) {
   return `<span class="badge ${cls}" aria-label="${text}">${text}</span>`;
 }
 
-/** Strip the shift suffix from area name — 'Dry 1st' → 'Dry' */
-function baseArea(area) {
-  return area.replace(/\s+(1st|2nd|4th|5th)$/i, '');
-}
-
-/** Extract just the number from shift — '1st' → '1' */
-function shiftNum(shift) {
-  return shift.replace(/\D/g, '');
-}
-
-/** Split full name into first and last — 'John Smith' → ['John', 'Smith'] */
-function splitName(name) {
-  if (!name) return { first: '', last: '' };
-  const parts = name.trim().split(/\s+/);
-  return {
-    first: parts[0] || '',
-    last:  parts.slice(1).join(' ') || '',
-  };
-}
-
 function emptyRow(cols, msg) {
   return `<tr><td colspan="${cols}" style="text-align:center;padding:20px;">${msg}</td></tr>`;
 }
@@ -196,7 +176,7 @@ function renderAreaBreakdown(filtered) {
     `);
   }
 
-  tbody.innerHTML = rows.length > 0 ? rows.join('') : emptyRow(7, 'No data for selected filters.');
+  tbody.innerHTML = rows.length > 0 ? rows.join('') : emptyRow(7, '📂 No FPA/LPA data loaded. Click <strong>Load FPA / LPA</strong> above to import reports.');
 }
 
 /* ============================================================
@@ -313,7 +293,7 @@ function renderScoreCards(filtered) {
       `;
   }
 
-  container.innerHTML = html || '<p style="padding:16px;color:#555;">No score card data for selected filters.</p>';
+  container.innerHTML = html || '<p style="padding:16px;color:#555;">📂 No FPA/LPA data loaded. Click <strong>Load FPA / LPA</strong> above to import reports.</p>';
 }
 
 /** Toggle a scorecard open/closed */
@@ -378,7 +358,7 @@ function renderFpaLpaTable(filtered) {
   });
 
   if (filtered.length === 0) {
-    tbody.innerHTML = emptyRow(9, 'No data for selected filters.');
+    tbody.innerHTML = emptyRow(9, '📂 No FPA/LPA data loaded. Click <strong>Load FPA / LPA</strong> above to import reports.');
     return;
   }
 
