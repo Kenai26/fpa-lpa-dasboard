@@ -2,14 +2,40 @@
  * DC 6084 — FPA / LPA Dashboard Data
  * Replace sample data with real feeds.
  *
- * FPA Goal: ≤ 16 minutes after shift start
- * LPA Goal: ≤ 14 minutes before shift end
+ * FPA Goals (area-specific):
+ *   - Dry: ≤ 14 minutes
+ *   - FDD: ≤ 15 minutes
+ *   - MP:  ≤ 14 minutes
+ * LPA Goal: ≤ 14 minutes (all areas)
  */
 
 const GOALS = Object.freeze({
-  FPA_MINUTES: 16,
+  // Area-specific FPA goals
+  FPA_MINUTES: {
+    DRY: 14,
+    FDD: 15,
+    MP:  14,
+    DEFAULT: 14,  // Fallback for unknown areas
+  },
   LPA_MINUTES: 14,
+  // Building-wide goals (unified targets)
+  BUILDING: {
+    FPA_MINUTES: 14,
+    LPA_MINUTES: 14,
+  },
 });
+
+/**
+ * Get the FPA goal for a given area.
+ * Areas like "Dry 1st", "FDD 2nd", "MP 4th" are matched by prefix.
+ */
+function getFpaGoal(area) {
+  const areaUpper = String(area || '').toUpperCase();
+  if (areaUpper.startsWith('DRY')) return GOALS.FPA_MINUTES.DRY;
+  if (areaUpper.startsWith('FDD')) return GOALS.FPA_MINUTES.FDD;
+  if (areaUpper.startsWith('MP'))  return GOALS.FPA_MINUTES.MP;
+  return GOALS.FPA_MINUTES.DEFAULT;
+}
 
 /**
  * Associate Roster — DC 6084

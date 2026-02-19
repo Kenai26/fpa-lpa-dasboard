@@ -647,6 +647,160 @@ tr.row--off-goal:hover {
   border: 0;
 }
 
+/* ----- Building Goal Section ----- */
+.building-goal-section {
+  margin: 0 24px 24px;
+  padding: 20px;
+  background: linear-gradient(135deg, #004f9a 0%, #0053e2 100%);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+}
+
+.building-goal-section .section-title {
+  color: var(--wm-white);
+  margin: 0 0 16px;
+  font-size: 1.3rem;
+}
+
+.building-goal-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.building-card {
+  background: var(--wm-white);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+.building-card-header {
+  padding: 10px 16px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--wm-white);
+}
+
+.building-card--target .building-card-header {
+  background: var(--wm-gray-600);
+}
+
+.building-card--fpa .building-card-header {
+  background: var(--wm-blue);
+}
+
+.building-card--lpa .building-card-header {
+  background: #6a1b9a; /* Purple for LPA */
+}
+
+.building-card--both .building-card-header {
+  background: var(--wm-green);
+}
+
+.building-card-body {
+  padding: 16px;
+  text-align: center;
+}
+
+.building-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--wm-gray-200);
+}
+
+.building-stat:last-child {
+  border-bottom: none;
+}
+
+.building-label {
+  font-weight: 600;
+  color: var(--wm-gray-600);
+}
+
+.building-value {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--wm-blue-dark);
+}
+
+.building-big-number {
+  font-size: 2.5rem;
+  font-weight: 800;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.building-card--fpa .building-big-number {
+  color: var(--wm-blue);
+}
+
+.building-card--lpa .building-big-number {
+  color: #6a1b9a;
+}
+
+.building-card--both .building-big-number {
+  color: var(--wm-green);
+}
+
+.building-subtext {
+  font-size: 0.9rem;
+  color: var(--wm-gray-600);
+}
+
+/* Building goal status colors */
+.building-big-number.status-great { color: var(--wm-green); }
+.building-big-number.status-good { color: #f9a825; }
+.building-big-number.status-poor { color: var(--wm-red); }
+
+/* ----- Scorecard Off-Goal Styling ----- */
+.over-goal {
+  color: var(--wm-red);
+  font-weight: 600;
+  font-size: 0.85em;
+}
+
+.off-goal-count {
+  font-weight: 400;
+  font-size: 0.85em;
+  color: var(--wm-red);
+}
+
+.table-caption {
+  text-align: left;
+  font-weight: 700;
+  padding: 8px 0;
+  color: var(--wm-gray-800);
+}
+
+/* ----- Hours Lost Card ----- */
+.building-card--hours-lost .building-card-header {
+  background: #c62828; /* Deep red */
+}
+
+.building-card--hours-lost .building-big-number {
+  color: #c62828;
+}
+
+.hours-lost-breakdown {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 8px;
+  font-size: 0.8rem;
+  color: var(--wm-gray-600);
+}
+
+.hours-lost-breakdown span {
+  padding: 4px 8px;
+  background: var(--wm-gray-100);
+  border-radius: 4px;
+}
+
 /* ----- Responsive ----- */
 @media (max-width: 768px) {
   .bottom5-grid { grid-template-columns: 1fr; }

@@ -26,4 +26,4 @@
 |---------|------------|-------------|-------------|
 | D6-1002 | 2026-02-11 | 14          | 12          |
 
-**FPA Goal:** ≤ 16 min | **LPA Goal:** ≤ 14 min
+**FPA Goals (area-specific):** Dry ≤ 14 min | FDD ≤ 15 min | MP ≤ 14 min | **LPA Goal:** ≤ 14 min

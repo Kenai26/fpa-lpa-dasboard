@@ -24,6 +24,16 @@ const dom = {
   fpaLpaTableBody:     () => document.getElementById('fpa-lpa-tbody'),
   rosterTableBody:     () => document.getElementById('roster-tbody'),
   rosterCount:         () => document.getElementById('roster-count'),
+  // Building Goal elements
+  buildingFpaPct:      () => document.getElementById('building-fpa-pct'),
+  buildingFpaCount:    () => document.getElementById('building-fpa-count'),
+  buildingLpaPct:      () => document.getElementById('building-lpa-pct'),
+  buildingLpaCount:    () => document.getElementById('building-lpa-count'),
+  buildingBothPct:     () => document.getElementById('building-both-pct'),
+  buildingBothCount:   () => document.getElementById('building-both-count'),
+  buildingHoursLost:   () => document.getElementById('building-hours-lost'),
+  hoursLostFpa:        () => document.getElementById('hours-lost-fpa'),
+  hoursLostLpa:        () => document.getElementById('hours-lost-lpa'),
 };
 
 /* ============================================================
@@ -113,7 +123,11 @@ function applyFilters(records) {
   );
 }
 
-function fpaPasses(min) { return min <= GOALS.FPA_MINUTES; }
+/**
+ * Check if FPA minutes pass the goal for a given area.
+ * Uses area-specific goals: Dry=14, FDD=15, MP=14
+ */
+function fpaPasses(min, area) { return min <= getFpaGoal(area); }
 function lpaPasses(min) { return min <= GOALS.LPA_MINUTES; }
 
 function badge(passes) {
@@ -144,9 +158,9 @@ function emptyRow(cols, msg) {
 
 function calcStats(records) {
   const total     = records.length;
-  const fpaGood   = records.filter(r => fpaPasses(r.fpaMinutes)).length;
+  const fpaGood   = records.filter(r => fpaPasses(r.fpaMinutes, r.area)).length;
   const lpaGood   = records.filter(r => lpaPasses(r.lpaMinutes)).length;
-  const bothGood  = records.filter(r => fpaPasses(r.fpaMinutes) && lpaPasses(r.lpaMinutes)).length;
+  const bothGood  = records.filter(r => fpaPasses(r.fpaMinutes, r.area) && lpaPasses(r.lpaMinutes)).length;
   return { total, fpaGood, lpaGood, bothGood };
 }
 
@@ -183,6 +197,104 @@ function updateReportDateBadge() {
 /* ============================================================
    Renderers
    ============================================================ */
+
+/**
+ * Check if FPA minutes pass the BUILDING goal (unified 14 min target).
+ */
+function fpaPassesBuilding(min) { return min <= GOALS.BUILDING.FPA_MINUTES; }
+function lpaPassesBuilding(min) { return min <= GOALS.BUILDING.LPA_MINUTES; }
+
+/**
+ * Render the Building Goal section with unified targets.
+ * Uses GOALS.BUILDING for building-wide goals (14 min for both FPA & LPA).
+ */
+function renderBuildingGoal(filtered) {
+  const total = filtered.length;
+  
+  // Calculate against BUILDING goals (not area-specific)
+  const fpaGood = filtered.filter(r => fpaPassesBuilding(r.fpaMinutes)).length;
+  const lpaGood = filtered.filter(r => lpaPassesBuilding(r.lpaMinutes)).length;
+  const bothGood = filtered.filter(r => fpaPassesBuilding(r.fpaMinutes) && lpaPassesBuilding(r.lpaMinutes)).length;
+  
+  const fpaPct = total > 0 ? Math.round((fpaGood / total) * 100) : 0;
+  const lpaPct = total > 0 ? Math.round((lpaGood / total) * 100) : 0;
+  const bothPct = total > 0 ? Math.round((bothGood / total) * 100) : 0;
+  
+  // Calculate Hours Lost (minutes over goal for all associates)
+  let fpaMinutesLost = 0;
+  let lpaMinutesLost = 0;
+  
+  filtered.forEach(r => {
+    // Use AREA-SPECIFIC goals for calculating time lost
+    const fpaGoal = getFpaGoal(r.area);
+    const lpaGoal = GOALS.LPA_MINUTES;
+    
+    if (r.fpaMinutes > fpaGoal) {
+      fpaMinutesLost += (r.fpaMinutes - fpaGoal);
+    }
+    if (r.lpaMinutes > lpaGoal) {
+      lpaMinutesLost += (r.lpaMinutes - lpaGoal);
+    }
+  });
+  
+  const totalMinutesLost = fpaMinutesLost + lpaMinutesLost;
+  const hoursLost = (totalMinutesLost / 60).toFixed(1);
+  
+  // Update DOM
+  const fpaEl = dom.buildingFpaPct();
+  const lpaEl = dom.buildingLpaPct();
+  const bothEl = dom.buildingBothPct();
+  
+  if (fpaEl) {
+    fpaEl.textContent = `${fpaPct}%`;
+    fpaEl.className = `building-big-number ${getStatusClass(fpaPct)}`;
+  }
+  if (dom.buildingFpaCount()) {
+    dom.buildingFpaCount().textContent = `${fpaGood} / ${total}`;
+  }
+  
+  if (lpaEl) {
+    lpaEl.textContent = `${lpaPct}%`;
+    lpaEl.className = `building-big-number ${getStatusClass(lpaPct)}`;
+  }
+  if (dom.buildingLpaCount()) {
+    dom.buildingLpaCount().textContent = `${lpaGood} / ${total}`;
+  }
+  
+  if (bothEl) {
+    bothEl.textContent = `${bothPct}%`;
+    bothEl.className = `building-big-number ${getStatusClass(bothPct)}`;
+  }
+  if (dom.buildingBothCount()) {
+    dom.buildingBothCount().textContent = `${bothGood} / ${total}`;
+  }
+  
+  // Update Hours Lost
+  if (dom.buildingHoursLost()) {
+    dom.buildingHoursLost().textContent = hoursLost;
+    // Color code based on hours lost
+    const hoursNum = parseFloat(hoursLost);
+    let hoursClass = 'status-great';
+    if (hoursNum > 2) hoursClass = 'status-poor';
+    else if (hoursNum > 0.5) hoursClass = 'status-good';
+    dom.buildingHoursLost().className = `building-big-number ${hoursClass}`;
+  }
+  if (dom.hoursLostFpa()) {
+    dom.hoursLostFpa().textContent = `FPA: ${fpaMinutesLost} min`;
+  }
+  if (dom.hoursLostLpa()) {
+    dom.hoursLostLpa().textContent = `LPA: ${lpaMinutesLost} min`;
+  }
+}
+
+/**
+ * Get CSS class based on percentage for color coding.
+ */
+function getStatusClass(pct) {
+  if (pct >= 80) return 'status-great';
+  if (pct >= 60) return 'status-good';
+  return 'status-poor';
+}
 
 function renderSummaryCards(filtered) {
   const { total, fpaGood, lpaGood, bothGood } = calcStats(filtered);
@@ -249,22 +361,35 @@ function renderAreaBreakdown(filtered) {
 function buildBottom5Html(records, metric, label, role) {
   const key = metric === 'fpa' ? 'fpaMinutes' : 'lpaMinutes';
   const byRole = records.filter(r => r.role === role);
-  const sorted = [...byRole].sort((a, b) => b[key] - a[key]).slice(0, 5);
+  
+  // Only include associates who are OFF goal
+  const offGoal = byRole.filter(r => {
+    if (metric === 'fpa') {
+      return !fpaPasses(r.fpaMinutes, r.area);  // Area-specific FPA goal
+    } else {
+      return !lpaPasses(r.lpaMinutes);  // LPA goal (14 min for all)
+    }
+  });
+  
+  // Sort by worst (highest minutes) first, take top 5
+  const sorted = [...offGoal].sort((a, b) => b[key] - a[key]).slice(0, 5);
 
   if (sorted.length === 0) {
     return `<div class="table-container">
       <table aria-label="${label}"><caption class="table-caption">${label}</caption>
-      <tbody>${emptyRow(5, 'No data')}</tbody></table></div>`;
+      <tbody>${emptyRow(5, '✅ All on goal!')}</tbody></table></div>`;
   }
 
   const rows = sorted.map((r, i) => {
+    const goal = metric === 'fpa' ? getFpaGoal(r.area) : GOALS.LPA_MINUTES;
+    const overBy = r[key] - goal;
     return `
       <tr class="bottom-five">
         <td>${i + 1}</td>
         <td>${r.userId}</td>
         <td>${r.firstName}</td>
         <td>${r.lastName}</td>
-        <td>${r[key]} min</td>
+        <td>${r[key]} min <span class="over-goal">(+${overBy})</span></td>
       </tr>
     `;
   }).join('');
@@ -272,7 +397,7 @@ function buildBottom5Html(records, metric, label, role) {
   return `
     <div class="table-container">
       <table aria-label="${label}">
-        <caption class="table-caption">${label}</caption>
+        <caption class="table-caption">${label} <span class="off-goal-count">(${offGoal.length} off goal)</span></caption>
         <thead><tr>
           <th scope="col">#</th>
           <th scope="col">User ID</th>
@@ -341,7 +466,7 @@ function renderScoreCards(filtered) {
               </div>
               <div class="mini-card mini--green">
                 <div class="mini-val">${fpaGood}/${total}</div>
-                <div class="mini-lbl">FPA ≤ ${GOALS.FPA_MINUTES}m</div>
+                <div class="mini-lbl">FPA ≤ ${getFpaGoal(area)}m</div>
               </div>
               <div class="mini-card mini--green">
                 <div class="mini-val">${lpaGood}/${total}</div>
@@ -444,7 +569,7 @@ function renderFpaLpaTable(filtered) {
       _lastName:  r.lastName,
       _baseArea:  r.area,
       _shift:     r.shift,
-      _overall:   (fpaPasses(r.fpaMinutes) && lpaPasses(r.lpaMinutes)) ? 'On Goal' : 'Off Goal',
+      _overall:   (fpaPasses(r.fpaMinutes, r.area) && lpaPasses(r.lpaMinutes)) ? 'On Goal' : 'Off Goal',
     };
   });
 
@@ -466,7 +591,7 @@ function renderFpaLpaTable(filtered) {
   });
 
   tbody.innerHTML = sorted.map(r => {
-    const onGoal = fpaPasses(r.fpaMinutes) && lpaPasses(r.lpaMinutes);
+    const onGoal = fpaPasses(r.fpaMinutes, r.area) && lpaPasses(r.lpaMinutes);
     return `
     <tr class="${onGoal ? '' : 'row--off-goal'}">
       <td>${r.userId}</td>
@@ -475,7 +600,7 @@ function renderFpaLpaTable(filtered) {
       <td>${r._shift}</td>
       <td>${r._baseArea}</td>
       <td>${r.role}</td>
-      <td>${r.fpaMinutes} min ${badge(fpaPasses(r.fpaMinutes))}</td>
+      <td>${r.fpaMinutes} min ${badge(fpaPasses(r.fpaMinutes, r.area))}</td>
       <td>${r.lpaMinutes} min ${badge(lpaPasses(r.lpaMinutes))}</td>
       <td>${badge(onGoal)}</td>
     </tr>
@@ -564,6 +689,7 @@ function renderAll() {
   const filtered = applyFilters(enriched);
 
   updateReportDateBadge();
+  renderBuildingGoal(filtered);
   renderSummaryCards(filtered);
   renderAreaBreakdown(filtered);
   renderScoreCards(filtered);

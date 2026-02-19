@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DC 6084 — FPA / LPA Dashboard</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=4">
 </head>
 <body>
 
@@ -135,7 +135,60 @@
     aria-labelledby="tab-fpa-lpa"
     aria-hidden="false"
   >
-    <!-- Summary Cards -->
+    <!-- Building Goal Section -->
+    <div class="building-goal-section">
+      <h2 class="section-title">🏢 Building Goal</h2>
+      <div class="building-goal-cards">
+        <div class="building-card building-card--target">
+          <div class="building-card-header">Target</div>
+          <div class="building-card-body">
+            <div class="building-stat">
+              <span class="building-label">FPA</span>
+              <span class="building-value">≤ 14 min</span>
+            </div>
+            <div class="building-stat">
+              <span class="building-label">LPA</span>
+              <span class="building-value">≤ 14 min</span>
+            </div>
+          </div>
+        </div>
+        <div class="building-card building-card--fpa">
+          <div class="building-card-header">FPA Building Performance</div>
+          <div class="building-card-body">
+            <div class="building-big-number" id="building-fpa-pct">0%</div>
+            <div class="building-subtext"><span id="building-fpa-count">0 / 0</span> on goal</div>
+          </div>
+        </div>
+        <div class="building-card building-card--lpa">
+          <div class="building-card-header">LPA Building Performance</div>
+          <div class="building-card-body">
+            <div class="building-big-number" id="building-lpa-pct">0%</div>
+            <div class="building-subtext"><span id="building-lpa-count">0 / 0</span> on goal</div>
+          </div>
+        </div>
+        <div class="building-card building-card--both">
+          <div class="building-card-header">Both On Building Goal</div>
+          <div class="building-card-body">
+            <div class="building-big-number" id="building-both-pct">0%</div>
+            <div class="building-subtext"><span id="building-both-count">0 / 0</span> associates</div>
+          </div>
+        </div>
+        <div class="building-card building-card--hours-lost">
+          <div class="building-card-header">⏱️ Hours Lost (Over Goal)</div>
+          <div class="building-card-body">
+            <div class="building-big-number" id="building-hours-lost">0.0</div>
+            <div class="building-subtext">hours</div>
+            <div class="hours-lost-breakdown">
+              <span id="hours-lost-fpa">FPA: 0 min</span>
+              <span id="hours-lost-lpa">LPA: 0 min</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Summary Cards (Area-Specific) -->
+    <h2 class="section-title">📊 Area-Specific Performance</h2>
     <div class="summary-cards">
       <div class="card card--blue">
         <div class="card-value" id="card-total">0</div>
@@ -143,11 +196,11 @@
       </div>
       <div class="card card--green">
         <div class="card-value" id="card-fpa-above">0 / 0</div>
-        <div class="card-label">FPA ≤ 16 min (On Goal)</div>
+        <div class="card-label">FPA On Goal (Dry/MP ≤14m, FDD ≤15m)</div>
       </div>
       <div class="card card--red">
         <div class="card-value" id="card-fpa-off">0 / 0</div>
-        <div class="card-label">FPA &gt; 16 min (Off Goal)</div>
+        <div class="card-label">FPA Off Goal</div>
       </div>
       <div class="card card--green">
         <div class="card-value" id="card-lpa-above">0 / 0</div>
@@ -231,11 +284,11 @@
   </div>
 
   <!-- Scripts -->
-  <script src="data.js"></script>
-  <script src="app.js"></script>
+  <script src="data.js?v=4"></script>
+  <script src="app.js?v=4"></script>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" 
           onerror="console.warn('SheetJS CDN blocked - import will use fallback');"></script>
-  <script src="import.js"></script>
+  <script src="import.js?v=3"></script>
   <script>
     // Diagnostic: verify data loaded
     console.log('Roster count:', ASSOCIATE_ROSTER.length);
