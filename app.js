@@ -12,6 +12,7 @@ const dom = {
   roleFilter:          () => document.getElementById('filter-role'),
   tabButtons:          () => document.querySelectorAll('.tab-btn'),
   tabPanels:           () => document.querySelectorAll('.tab-panel'),
+  dateBadge:           () => document.querySelector('.date-badge'),
   cardTotal:           () => document.getElementById('card-total'),
   cardFpaAbove:        () => document.getElementById('card-fpa-above'),
   cardFpaOff:           () => document.getElementById('card-fpa-off'),
@@ -81,7 +82,9 @@ function getEnrichedData() {
         lastName,
         area:       match.area  || '',
         shift:      match.shift || '',
-        role:       match.role  || '',
+        // Use the role from the FPA/LPA import (determined by file: FPAOF=Orderfiller, FPALD=Lift Driver)
+        // This ensures score card bottom-5 tables work regardless of roster role naming
+        role:       d.role || match.role || '',
       };
     });
 
@@ -145,6 +148,36 @@ function calcStats(records) {
   const lpaGood   = records.filter(r => lpaPasses(r.lpaMinutes)).length;
   const bothGood  = records.filter(r => fpaPasses(r.fpaMinutes) && lpaPasses(r.lpaMinutes)).length;
   return { total, fpaGood, lpaGood, bothGood };
+}
+
+/**
+ * Update the header date badge with the report date from uploaded filenames.
+ * REPORT_DATE is set in import.js when FPA/LPA files are uploaded.
+ */
+function updateReportDateBadge() {
+  const badge = dom.dateBadge();
+  if (!badge) return;
+
+  // REPORT_DATE is set in import.js from the uploaded filename (e.g., "FPAOF_2026-02-18.xlsx")
+  if (typeof REPORT_DATE !== 'undefined' && REPORT_DATE instanceof Date && !isNaN(REPORT_DATE.getTime())) {
+    const formatted = REPORT_DATE.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+    badge.textContent = formatted;
+    console.log('Report date badge updated from filename:', formatted);
+    return;
+  }
+
+  // Fallback: check if any FPA/LPA data is loaded
+  if (!FPA_LPA_DATA || FPA_LPA_DATA.length === 0) {
+    badge.textContent = 'No Data Loaded';
+    return;
+  }
+
+  // If we have data but no REPORT_DATE, show "Date Unknown"
+  badge.textContent = 'Date Unknown';
 }
 
 /* ============================================================
@@ -530,6 +563,7 @@ function renderAll() {
   }
   const filtered = applyFilters(enriched);
 
+  updateReportDateBadge();
   renderSummaryCards(filtered);
   renderAreaBreakdown(filtered);
   renderScoreCards(filtered);

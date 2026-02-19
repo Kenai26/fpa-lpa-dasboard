@@ -13,6 +13,9 @@ if (typeof XLSX === 'undefined') {
 const STORAGE_KEY_ROSTER = 'dc6084_roster';
 const STORAGE_KEY_ROSTER_DATE = 'dc6084_roster_date';
 
+// Store the report date extracted from uploaded filenames
+let REPORT_DATE = null;
+
 /* ============================================================
    Column Mappings
    ============================================================ */
@@ -38,10 +41,41 @@ const FPA_COL_MAP = {
   'lpa min':      'lpaMinutes', 'lpa (min)':    'lpaMinutes', 'lpa (mins)':'lpaMinutes',
   'lpa_minutes':  'lpaMinutes', 'last pick':    'lpaMinutes',
 };
-
 /* ============================================================
    Helpers
    ============================================================ */
+
+/**
+ * Extract a date from a filename like "FPAOF_2026-02-18.xlsx" or "report 2026-02-18.csv"
+ * Returns a Date object if found, null otherwise.
+ */
+function extractDateFromFilename(filename) {
+  if (!filename) return null;
+  
+  // Look for YYYY-MM-DD pattern in filename
+  const match = filename.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (match) {
+    const [, year, month, day] = match;
+    const d = new Date(`${year}-${month}-${day}T00:00:00`);
+    if (!isNaN(d.getTime())) {
+      console.log('Extracted date from filename:', filename, '→', d.toDateString());
+      return d;
+    }
+  }
+  
+  // Also try MM-DD-YYYY or MM/DD/YYYY patterns
+  const altMatch = filename.match(/(\d{2})[\-\/](\d{2})[\-\/](\d{4})/);
+  if (altMatch) {
+    const [, month, day, year] = altMatch;
+    const d = new Date(`${year}-${month}-${day}T00:00:00`);
+    if (!isNaN(d.getTime())) {
+      console.log('Extracted date from filename (alt format):', filename, '→', d.toDateString());
+      return d;
+    }
+  }
+  
+  return null;
+}
 
 function mapHeaders(rawHeaders, colMap) {
   return rawHeaders.map(h => colMap[String(h).trim().toLowerCase()] || null);
@@ -359,11 +393,17 @@ async function runImport() {
   const msgs = [];
   let ok = false;
   const fpaRecords = [];
+  let extractedDate = null;
 
   try {
     if (fpaofInput.files.length > 0) {
       const file = fpaofInput.files[0];
       console.log('FPAOF file:', file.name, file.type, file.size, 'bytes');
+      
+      // Extract date from filename
+      const fileDate = extractDateFromFilename(file.name);
+      if (fileDate && !extractedDate) extractedDate = fileDate;
+      
       const data = await readFileAsArray(file);
       const rows = getFirstSheetRows(data, file);
       console.log('FPAOF headers found:', rows[0]);
@@ -380,6 +420,11 @@ async function runImport() {
     if (fpaldInput.files.length > 0) {
       const file = fpaldInput.files[0];
       console.log('FPALD file:', file.name, file.type, file.size, 'bytes');
+      
+      // Extract date from filename
+      const fileDate = extractDateFromFilename(file.name);
+      if (fileDate && !extractedDate) extractedDate = fileDate;
+      
       const data = await readFileAsArray(file);
       const rows = getFirstSheetRows(data, file);
       console.log('FPALD headers found:', rows[0]);
@@ -391,6 +436,12 @@ async function runImport() {
       fpaRecords.push(...parsed);
       msgs.push(`\u2705 FPALD: ${parsed.length} lift driver records loaded`);
       ok = true;
+    }
+
+    // Store the extracted report date
+    if (extractedDate) {
+      REPORT_DATE = extractedDate;
+      console.log('Report date set from filename:', REPORT_DATE.toDateString());
     }
 
     if (fpaRecords.length > 0) {
