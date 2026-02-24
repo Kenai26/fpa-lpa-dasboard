@@ -32,8 +32,7 @@
   "homepage": "https://puppy.walmart.com",
   "repository": {
     "type": "git",
-    "url": "",
-    "note": "⚠️  UPDATE THIS: Set your git repository URL before publishing (see PUBLISHING_CHECKLIST.md)"
+    "url": "https://github.com/Kenai26/fpa-lpa-dasboard.git"
   },
   "features": [
     "Real-time FPA/LPA performance tracking",
@@ -130,9 +129,9 @@
     "codeQuality": true,
     "security": true,
     "accessibility": true,
-    "gitRepositoryConfigured": false,
-    "gitRemoteSet": false,
-    "codePushed": false,
-    "readyToPublish": false
+    "gitRepositoryConfigured": true,
+    "gitRemoteSet": true,
+    "codePushed": true,
+    "readyToPublish": true
   }
 }
