@@ -1,0 +1,53 @@
+📦 FILES TO UPLOAD TO SHAREPOINT/TEAMS
+==========================================
+
+Upload ONLY these 5 files:
+
+  ✓ index.html       (Main dashboard - OPEN THIS FILE)
+  ✓ app.js           (Dashboard logic)
+  ✓ styles.css       (Styling)
+  ✓ data.js          (Sample data)
+  ✓ import.js        (File upload handler)
+
+
+🚀 STEP-BY-STEP UPLOAD INSTRUCTIONS
+
+1. Open Teams
+2. Go to your Team → Files tab
+3. Create a folder called "FPA-LPA-Dashboard" (optional but recommended)
+4. Click "Upload" 
+5. Select the 5 files above
+6. Upload them
+
+
+🔗 AFTER UPLOAD
+
+1. Right-click index.html
+2. Click "Share"
+3. Copy the link
+4. Share with your team!
+
+
+📝 SHARE MESSAGE TEMPLATE
+
+Paste this in Teams:
+
+---
+
+📊 FPA/LPA Dashboard is Live!
+
+Click here to use: [PASTE YOUR LINK HERE]
+
+How to use:
+  1. Upload your roster CSV
+  2. Load FPA/LPA reports
+  3. View your metrics
+
+Need help? See the README in the folder or ask me.
+
+---
+
+
+⏱️ TOTAL TIME: 5 minutes
+
+Let's go! 🚀
