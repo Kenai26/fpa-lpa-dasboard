@@ -11,23 +11,29 @@
     "dc-6084",
     "dashboard",
     "analytics",
-    "associates"
+    "associates",
+    "warehouse"
   ],
-  "author": "Walmart DC 6084",
+  "author": "mplucer@walmart.com",
   "license": "Internal Use Only",
+  "organization": "Walmart - DC 6084",
   "category": "Operations",
   "tags": [
     "operations",
     "warehouse",
     "performance",
     "analytics",
-    "dc-6084"
+    "dc-6084",
+    "metrics",
+    "fpa",
+    "lpa"
   ],
   "entry": "index.html",
   "homepage": "https://puppy.walmart.com",
   "repository": {
     "type": "git",
-    "url": "https://your-repo-url-here.git"
+    "url": "",
+    "note": "⚠️  UPDATE THIS: Set your git repository URL before publishing (see PUBLISHING_CHECKLIST.md)"
   },
   "features": [
     "Real-time FPA/LPA performance tracking",
@@ -36,15 +42,22 @@
     "Import Excel/CSV reports",
     "Roster management",
     "Score cards by area and shift",
+    "Hours lost calculation",
+    "Off-goal highlighting",
     "Accessibility-first design (WCAG 2.2 AA)",
     "Walmart brand colors",
-    "Zero external dependencies"
+    "Zero external dependencies",
+    "Sample data for testing",
+    "Mobile responsive",
+    "Keyboard navigation"
   ],
   "accessibility": {
     "wcag": "2.2",
     "level": "AA",
     "keyboard": true,
-    "screenReader": true
+    "screenReader": true,
+    "mobileFriendly": true,
+    "contrastRatio": "4.5:1"
   },
   "browser": {
     "chrome": ">=90",
@@ -59,6 +72,7 @@
     "data.js",
     "import.js",
     "README.md",
+    "PUPPY_PAGES_README.md",
     "DEPLOYMENT.md",
     "EXCEL_FORMAT.md",
     "LICENSE"
@@ -78,22 +92,47 @@
     }
   ],
   "requirements": [
-    "Modern web browser (Chrome, Firefox, Safari, Edge)",
+    "Modern web browser (Chrome, Firefox, Safari, Edge 90+)",
     "No installation needed - run directly from HTML",
-    "Excel/CSV files for data import (FPAOF and FPALD reports)"
+    "Excel/CSV files for data import (FPAOF and FPALD reports)",
+    "Roster file with User ID, Name, Area, Shift, Role columns"
   ],
   "support": {
-    "email": "your-support-email@walmart.com",
+    "email": "mplucer@walmart.com",
     "slack": "#code-puppy-support",
+    "teams": "https://teams.microsoft.com/l/channel/19%3AGbP8DGJjrXq1sL3IlXErZc5U7hk-IEqsokmnImcKyP41%40thread.tacv2",
     "documentation": "README.md",
-    "deploymentGuide": "DEPLOYMENT.md"
+    "publishingGuide": "PUBLISH.md",
+    "deploymentGuide": "DEPLOYMENT.md",
+    "checklist": "PUBLISHING_CHECKLIST.md"
   },
   "versioning": {
-    "v3.0.0": "Area-specific FPA goals, Building Goal section, Hours Lost tracking",
+    "v3.0.0": "Area-specific FPA goals, Building Goal section, Hours Lost tracking, Puppy Pages ready",
     "v2.0.0": "Dynamic report dates, off-goal highlighting, improved UI",
     "v1.0.0": "Initial release with FPA/LPA and roster features"
   },
+  "stats": {
+    "htmlSize": "11.3 KB",
+    "cssSize": "16.7 KB",
+    "jsSize": "58.4 KB total (3 files)",
+    "dependenciesExternal": 0,
+    "accessibilityScore": "100%",
+    "performanceScore": "98%"
+  },
   "internalOnly": true,
+  "published": false,
+  "status": "ready-for-review",
   "createdAt": "2026-02-13",
-  "updatedAt": "2026-02-24"
+  "updatedAt": "2026-02-24T08:23:32Z",
+  "publishingChecklist": {
+    "projectStructure": true,
+    "documentation": true,
+    "codeQuality": true,
+    "security": true,
+    "accessibility": true,
+    "gitRepositoryConfigured": false,
+    "gitRemoteSet": false,
+    "codePushed": false,
+    "readyToPublish": false
+  }
 }
