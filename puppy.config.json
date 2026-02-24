@@ -1,0 +1,99 @@
+{
+  "name": "fpa-lpa-dashboard",
+  "displayName": "📊 DC 6084 FPA/LPA Dashboard",
+  "version": "3.0.0",
+  "description": "Real-time FPA/LPA performance dashboard for Distribution Center 6084. Track associate metrics, building goals, and area-specific performance with dynamic filtering and detailed analytics.",
+  "keywords": [
+    "fpa",
+    "lpa",
+    "performance",
+    "metrics",
+    "dc-6084",
+    "dashboard",
+    "analytics",
+    "associates"
+  ],
+  "author": "Walmart DC 6084",
+  "license": "Internal Use Only",
+  "category": "Operations",
+  "tags": [
+    "operations",
+    "warehouse",
+    "performance",
+    "analytics",
+    "dc-6084"
+  ],
+  "entry": "index.html",
+  "homepage": "https://puppy.walmart.com",
+  "repository": {
+    "type": "git",
+    "url": "https://your-repo-url-here.git"
+  },
+  "features": [
+    "Real-time FPA/LPA performance tracking",
+    "Dynamic filtering by area, shift, and role",
+    "Building goal metrics and analysis",
+    "Import Excel/CSV reports",
+    "Roster management",
+    "Score cards by area and shift",
+    "Accessibility-first design (WCAG 2.2 AA)",
+    "Walmart brand colors",
+    "Zero external dependencies"
+  ],
+  "accessibility": {
+    "wcag": "2.2",
+    "level": "AA",
+    "keyboard": true,
+    "screenReader": true
+  },
+  "browser": {
+    "chrome": ">=90",
+    "firefox": ">=88",
+    "safari": ">=14",
+    "edge": ">=90"
+  },
+  "files": [
+    "index.html",
+    "styles.css",
+    "app.js",
+    "data.js",
+    "import.js",
+    "README.md",
+    "DEPLOYMENT.md",
+    "EXCEL_FORMAT.md",
+    "LICENSE"
+  ],
+  "screenshots": [
+    {
+      "title": "FPA/LPA Report Overview",
+      "description": "Building goal tracking and area-specific performance metrics"
+    },
+    {
+      "title": "Associate Roster",
+      "description": "Manage team structure and filter by area, shift, and role"
+    },
+    {
+      "title": "Score Cards",
+      "description": "Detailed breakdown by area and shift with off-goal highlighting"
+    }
+  ],
+  "requirements": [
+    "Modern web browser (Chrome, Firefox, Safari, Edge)",
+    "No installation needed - run directly from HTML",
+    "Excel/CSV files for data import (FPAOF and FPALD reports)"
+  ],
+  "support": {
+    "email": "your-support-email@walmart.com",
+    "slack": "#code-puppy-support",
+    "documentation": "README.md",
+    "deploymentGuide": "DEPLOYMENT.md"
+  },
+  "versioning": {
+    "v3.0.0": "Area-specific FPA goals, Building Goal section, Hours Lost tracking",
+    "v2.0.0": "Dynamic report dates, off-goal highlighting, improved UI",
+    "v1.0.0": "Initial release with FPA/LPA and roster features"
+  },
+  "internalOnly": true,
+  "createdAt": "2026-02-13",
+  "updatedAt": "2026-02-24"
+}

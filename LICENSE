@@ -1,0 +1,31 @@
+WALMART INTERNAL USE LICENSE
+
+Copyright © 2026 Walmart Inc.
+
+This software is provided solely for internal use by Walmart employees and authorized contractors in connection with operations at Distribution Center 6084.
+
+GRANTED RIGHTS:
+- Use this software for FPA/LPA performance tracking and reporting
+- Modify the code for your facility's needs
+- Deploy within Walmart infrastructure
+- Train others to use the dashboard
+
+RESTRICTIONS:
+- Do not redistribute outside Walmart organization
+- Do not use for commercial purposes outside Walmart
+- Do not publish source code publicly without approval
+- Maintain confidentiality of associate performance data
+- Do not remove or alter this license notice
+
+DISCLAIMER:
+THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL WALMART BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY.
+
+DATA PRIVACY:
+- All data processing occurs locally in the browser
+- No data is transmitted to external servers
+- Associates' personal data must be handled per Walmart InfoSec policies
+- HIPAA-restricted data is prohibited
+- PII should not be persisted after session ends
+
+SUPPORT:
+For questions or issues, contact your Walmart IT department or Code Puppy support team.
