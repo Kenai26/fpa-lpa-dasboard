@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DC 6084 — FPA / LPA Dashboard</title>
-  <link rel="stylesheet" href="styles.css?v=4">
+  <link rel="stylesheet" href="styles.css?v=5">
 </head>
 <body>
 
@@ -284,17 +284,10 @@
   </div>
 
   <!-- Scripts -->
-  <script src="data.js?v=4"></script>
-  <script src="app.js?v=4"></script>
-  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" 
-          onerror="console.warn('SheetJS CDN blocked - import will use fallback');"></script>
-  <script src="import.js?v=3"></script>
-  <script>
-    // Diagnostic: verify data loaded
-    console.log('Roster count:', ASSOCIATE_ROSTER.length);
-    console.log('FPA/LPA count:', FPA_LPA_DATA.length);
-    if (ASSOCIATE_ROSTER.length > 0) console.log('First roster entry:', ASSOCIATE_ROSTER[0]);
-    if (FPA_LPA_DATA.length > 0) console.log('First FPA entry:', FPA_LPA_DATA[0]);
-  </script>
+  <script src="data.js?v=5"></script>
+  <script src="app.js?v=5"></script>
+  <script src="import.js?v=5"></script>
+  <script async src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" 
+          onerror="console.warn('SheetJS CDN blocked - CSV-only mode');"></script>
 </body>
 </html>
