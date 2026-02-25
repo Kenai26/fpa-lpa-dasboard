@@ -1,0 +1,2595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DC 6084 — FPA / LPA Dashboard</title>
+<style>
+/* ============================================================
+   DC 6084 FPA / LPA Dashboard Styles
+   WCAG 2.2 Level AA compliant
+   Walmart-inspired color palette
+   ============================================================ */
+
+:root {
+  --wm-blue:        #0053e2;
+  --wm-blue-dark:   #004f9a;
+  --wm-blue-light:  #e6f1fc;
+  --wm-yellow:      #ffc220;
+  --wm-green:       #2a8703;
+  --wm-red:         #ea1100;
+  --wm-gray-100:    #f5f5f5;
+  --wm-gray-200:    #e0e0e0;
+  --wm-gray-600:    #555555;
+  --wm-gray-800:    #222222;
+  --wm-white:       #ffffff;
+
+  --color-success:  #2a8703;
+  --color-danger:   #ea1100;
+  --color-warning:  #995213;
+  --color-bg:       var(--wm-gray-100);
+  --color-surface:  var(--wm-white);
+  --color-text:     var(--wm-gray-800);
+  --color-muted:    var(--wm-gray-600);
+  --border-radius:  8px;
+  --shadow:         0 2px 8px rgba(0,0,0,.1);
+}
+
+/* ----- Reset & Base ----- */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* ----- Focus visible (WCAG) ----- */
+:focus-visible {
+  outline: 3px solid var(--wm-blue);
+  outline-offset: 2px;
+}
+
+/* ----- Header ----- */
+.header {
+  background: var(--wm-blue-dark);
+  color: var(--wm-white);
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: var(--shadow);
+}
+
+.header h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.header .date-badge {
+  background: var(--wm-yellow);
+  color: var(--wm-gray-800);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* ----- Tab Navigation ----- */
+.tab-nav {
+  display: flex;
+  gap: 0;
+  background: var(--wm-white);
+  border-bottom: 2px solid var(--wm-gray-200);
+  padding: 0 24px;
+}
+
+.tab-btn {
+  padding: 12px 24px;
+  border: none;
+  background: transparent;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-muted);
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.tab-btn:hover { color: var(--wm-blue); }
+
+.tab-btn[aria-selected="true"] {
+  color: var(--wm-blue-dark);
+  border-bottom-color: var(--wm-blue);
+}
+
+/* ----- Filters ----- */
+.filters {
+  display: flex;
+  gap: 16px;
+  padding: 16px 24px;
+  background: var(--wm-white);
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.filter-group label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.filter-group select {
+  padding: 8px 12px;
+  border: 2px solid var(--wm-gray-200);
+  border-radius: var(--border-radius);
+  font-size: 0.95rem;
+  color: var(--color-text);
+  background: var(--wm-white);
+  min-width: 180px;
+  cursor: pointer;
+}
+
+.filter-group select:hover { border-color: var(--wm-blue); }
+
+/* ----- Tab Panels ----- */
+.tab-panel {
+  display: none;
+  padding: 24px;
+}
+
+.tab-panel[aria-hidden="false"] { display: block; }
+
+/* ----- Summary Cards ----- */
+.summary-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.card {
+  background: var(--color-surface);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  text-align: center;
+}
+
+.card .card-value {
+  font-size: 2.5rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.card .card-label {
+  font-size: 0.85rem;
+  color: var(--color-muted);
+  margin-top: 4px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.card.card--blue   .card-value { color: var(--wm-blue-dark); }
+.card.card--green  .card-value { color: var(--color-success); }
+.card.card--red    .card-value { color: var(--color-danger); }
+.card.card--yellow .card-value { color: var(--color-warning); }
+
+/* ----- Section titles ----- */
+.section-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+  color: var(--wm-blue-dark);
+  border-left: 4px solid var(--wm-blue);
+  padding-left: 12px;
+}
+
+/* ----- Tables ----- */
+.table-container {
+  background: var(--color-surface);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  overflow-x: auto;
+  margin-bottom: 24px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+
+thead th {
+  background: var(--wm-blue-dark);
+  color: var(--wm-white);
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  white-space: nowrap;
+}
+
+tbody td {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--wm-gray-200);
+}
+
+tbody tr:hover { background: var(--wm-blue-light); }
+tbody tr:nth-child(even) { background: var(--wm-gray-100); }
+tbody tr:nth-child(even):hover { background: var(--wm-blue-light); }
+
+/* ----- Sortable table headers ----- */
+.sortable-th {
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s;
+}
+
+.sortable-th:hover {
+  background: var(--wm-blue) !important;
+}
+
+/* Status badges */
+.badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.badge--pass {
+  background: #e8f5e9;
+  color: var(--color-success);
+  border: 1px solid var(--color-success);
+}
+
+.badge--fail {
+  background: #ffebee;
+  color: var(--color-danger);
+  border: 1px solid var(--color-danger);
+  font-weight: 800;
+}
+
+/* Bottom-5 row highlight */
+tr.bottom-five {
+  background: #fff3e0 !important;
+  border-left: 4px solid var(--color-warning);
+}
+
+/* Off-goal row highlight in data table */
+tr.row--off-goal {
+  background: #ffebee !important;
+}
+
+tr.row--off-goal:hover {
+  background: #ffcdd2 !important;
+}
+
+/* ----- Bottom 5 mini table grid ----- */
+.bottom5-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+/* ----- Table captions ----- */
+.table-caption {
+  padding: 12px 16px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--wm-blue-dark);
+  text-align: left;
+  caption-side: top;
+  background: var(--wm-blue-light);
+  border-bottom: 2px solid var(--wm-gray-200);
+}
+
+/* ============================================================
+   SCORE CARDS (Accordion per Area + Shift)
+   ============================================================ */
+.scorecards-container {
+  margin-bottom: 24px;
+}
+
+.scorecard {
+  background: var(--color-surface);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+
+.scorecard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  background: var(--wm-blue-dark);
+  color: var(--wm-white);
+  cursor: pointer;
+  border: none;
+  width: 100%;
+  font-size: 1rem;
+  font-weight: 700;
+  text-align: left;
+  transition: background 0.2s;
+}
+
+.scorecard-header:hover { background: var(--wm-blue); }
+
+.scorecard-header .scorecard-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.scorecard-header .scorecard-stats {
+  display: flex;
+  gap: 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.scorecard-header .scorecard-stats .stat {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.scorecard-header .stat-good { color: #a5d6a7; }
+.scorecard-header .stat-bad  { color: #ef9a9a; }
+
+.scorecard-chevron {
+  font-size: 1.2rem;
+  transition: transform 0.25s;
+}
+
+.scorecard[aria-expanded="true"] .scorecard-chevron {
+  transform: rotate(180deg);
+}
+
+.scorecard-body {
+  display: none;
+  padding: 16px 20px;
+}
+
+.scorecard[aria-expanded="true"] .scorecard-body {
+  display: block;
+}
+
+.scorecard-mini-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.mini-card {
+  background: var(--wm-gray-100);
+  border-radius: 6px;
+  padding: 12px;
+  text-align: center;
+}
+
+.mini-card .mini-val {
+  font-size: 1.6rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.mini-card .mini-lbl {
+  font-size: 0.75rem;
+  color: var(--color-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.mini-card.mini--blue   .mini-val { color: var(--wm-blue-dark); }
+.mini-card.mini--green  .mini-val { color: var(--color-success); }
+.mini-card.mini--red    .mini-val { color: var(--color-danger); }
+.mini-card.mini--yellow .mini-val { color: var(--color-warning); }
+
+.scorecard .bottom5-grid {
+  margin-bottom: 8px;
+}
+
+.scorecard-subtitle {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--wm-blue-dark);
+  margin: 12px 0 8px;
+  padding: 6px 12px;
+  background: var(--wm-blue-light);
+  border-radius: 4px;
+  border-left: 4px solid var(--wm-blue);
+}
+
+/* ----- Upload Buttons ----- */
+.btn-roster,
+.btn-import {
+  padding: 8px 20px;
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+  color: var(--wm-white);
+}
+
+.btn-roster {
+  background: var(--wm-green);
+}
+
+.btn-roster:hover { background: #1b5e20; }
+
+.btn-import {
+  background: var(--wm-blue);
+}
+
+.btn-import:hover { background: var(--wm-blue-dark); }
+
+/* ----- Roster Status Bar ----- */
+.roster-status {
+  margin: 0 24px;
+  padding: 8px 16px;
+  border-radius: var(--border-radius);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.roster-status.roster-ok {
+  background: #e8f5e9;
+  color: var(--color-success);
+  border: 1px solid #a5d6a7;
+}
+
+.btn-clear {
+  padding: 4px 12px;
+  background: none;
+  border: 1px solid var(--wm-gray-200);
+  border-radius: 4px;
+  font-size: 0.78rem;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.btn-clear:hover {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
+.roster-status.roster-warn {
+  background: #fff3e0;
+  color: var(--color-warning);
+  border: 1px solid #ffcc80;
+}
+
+/* ----- Import Status Banner ----- */
+.import-status {
+  margin: 0 24px;
+  padding: 12px 20px;
+  border-radius: var(--border-radius);
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.import-status.import-ok {
+  background: #e8f5e9;
+  color: var(--color-success);
+  border: 1px solid #a5d6a7;
+}
+
+.import-status.import-err {
+  background: #ffebee;
+  color: var(--color-danger);
+  border: 1px solid #ef9a9a;
+}
+
+/* ----- Modal ----- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+
+.modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--wm-white);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  width: 500px;
+  max-width: 90vw;
+  z-index: 1000;
+  display: none;
+}
+
+.modal[aria-hidden="false"] { display: block; }
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  background: var(--wm-blue-dark);
+  color: var(--wm-white);
+  border-radius: 12px 12px 0 0;
+}
+
+.modal-header h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: var(--wm-white);
+  font-size: 1.5rem;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 4px;
+}
+
+.modal-close:hover { opacity: 0.7; }
+
+.modal-body {
+  padding: 20px 24px;
+}
+
+.modal-desc {
+  font-size: 0.9rem;
+  color: var(--color-muted);
+  margin-bottom: 16px;
+}
+
+.modal-file-group {
+  margin-bottom: 14px;
+}
+
+.modal-file-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.modal-file-icon {
+  font-size: 1.4rem;
+}
+
+.modal-file-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+
+.modal-file-text strong {
+  font-size: 0.95rem;
+  color: var(--color-text);
+}
+
+.modal-file-text small {
+  font-size: 0.78rem;
+  color: var(--color-muted);
+}
+
+.modal-file-input {
+  width: 100%;
+  padding: 6px;
+  border: 2px solid var(--wm-gray-200);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.modal-file-input:hover { border-color: var(--wm-blue); }
+
+.modal-footer {
+  padding: 12px 24px 20px;
+  text-align: right;
+}
+
+.btn-primary {
+  padding: 10px 28px;
+  background: var(--wm-blue);
+  color: var(--wm-white);
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-primary:hover { background: var(--wm-blue-dark); }
+
+/* ----- Roster Filter Indicator ----- */
+.roster-filter-indicator {
+  margin: 0 0 12px;
+  padding: 10px 16px;
+  border-radius: var(--border-radius);
+  font-size: 0.88rem;
+  font-weight: 600;
+  background: #e6f1fc;
+  color: var(--wm-blue-dark);
+  border: 1px solid #90caf9;
+}
+
+/* ----- Screen reader only utility ----- */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ----- Building Goal Section ----- */
+.building-goal-section {
+  margin: 0 24px 24px;
+  padding: 20px;
+  background: linear-gradient(135deg, #004f9a 0%, #0053e2 100%);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+}
+
+.building-goal-section .section-title {
+  color: var(--wm-white);
+  margin: 0 0 16px;
+  font-size: 1.3rem;
+}
+
+.building-goal-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.building-card {
+  background: var(--wm-white);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+.building-card-header {
+  padding: 10px 16px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--wm-white);
+}
+
+.building-card--target .building-card-header {
+  background: var(--wm-gray-600);
+}
+
+.building-card--fpa .building-card-header {
+  background: var(--wm-blue);
+}
+
+.building-card--lpa .building-card-header {
+  background: #6a1b9a; /* Purple for LPA */
+}
+
+.building-card--both .building-card-header {
+  background: var(--wm-green);
+}
+
+.building-card-body {
+  padding: 16px;
+  text-align: center;
+}
+
+.building-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--wm-gray-200);
+}
+
+.building-stat:last-child {
+  border-bottom: none;
+}
+
+.building-label {
+  font-weight: 600;
+  color: var(--wm-gray-600);
+}
+
+.building-value {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--wm-blue-dark);
+}
+
+.building-big-number {
+  font-size: 2.5rem;
+  font-weight: 800;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.building-card--fpa .building-big-number {
+  color: var(--wm-blue);
+}
+
+.building-card--lpa .building-big-number {
+  color: #6a1b9a;
+}
+
+.building-card--both .building-big-number {
+  color: var(--wm-green);
+}
+
+.building-subtext {
+  font-size: 0.9rem;
+  color: var(--wm-gray-600);
+}
+
+/* Building goal status colors */
+.building-big-number.status-great { color: var(--wm-green); }
+.building-big-number.status-good { color: #f9a825; }
+.building-big-number.status-poor { color: var(--wm-red); }
+
+/* ----- Scorecard Off-Goal Styling ----- */
+.over-goal {
+  color: var(--wm-red);
+  font-weight: 600;
+  font-size: 0.85em;
+}
+
+.off-goal-count {
+  font-weight: 400;
+  font-size: 0.85em;
+  color: var(--wm-red);
+}
+
+.table-caption {
+  text-align: left;
+  font-weight: 700;
+  padding: 8px 0;
+  color: var(--wm-gray-800);
+}
+
+/* ----- Hours Lost Card ----- */
+.building-card--hours-lost .building-card-header {
+  background: #c62828; /* Deep red */
+}
+
+.building-card--hours-lost .building-big-number {
+  color: #c62828;
+}
+
+.hours-lost-breakdown {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 8px;
+  font-size: 0.8rem;
+  color: var(--wm-gray-600);
+}
+
+.hours-lost-breakdown span {
+  padding: 4px 8px;
+  background: var(--wm-gray-100);
+  border-radius: 4px;
+}
+
+/* ----- Responsive ----- */
+@media (max-width: 768px) {
+  .bottom5-grid { grid-template-columns: 1fr; }
+  .summary-cards { grid-template-columns: 1fr 1fr; }
+  .scorecard-header { flex-direction: column; gap: 8px; align-items: flex-start; }
+  .scorecard-header .scorecard-stats { flex-wrap: wrap; }
+}
+
+@media (max-width: 480px) {
+  .summary-cards { grid-template-columns: 1fr; }
+  .scorecard-mini-cards { grid-template-columns: 1fr 1fr; }
+}
+
+</style>
+</head>
+<body>
+
+  <!-- ========== HEADER ========== -->
+  <header class="header" role="banner">
+    <h1>📊 DC 6084 — FPA / LPA Dashboard</h1>
+    <span class="date-badge" aria-label="Report date">No Data Loaded</span>
+  </header>
+
+  <!-- ========== TAB NAVIGATION ========== -->
+  <nav class="tab-nav" role="tablist" aria-label="Dashboard reports">
+    <button
+      class="tab-btn"
+      id="tab-fpa-lpa"
+      role="tab"
+      aria-selected="true"
+      aria-controls="panel-fpa-lpa"
+      tabindex="0"
+    >
+      FPA / LPA Report
+    </button>
+    <button
+      class="tab-btn"
+      id="tab-roster"
+      role="tab"
+      aria-selected="false"
+      aria-controls="panel-roster"
+      tabindex="-1"
+    >
+      Associate Roster
+    </button>
+  </nav>
+
+  <!-- ========== FILTERS ========== -->
+  <section class="filters" aria-label="Report filters">
+    <div class="filter-group">
+      <label for="filter-area">Area</label>
+      <select id="filter-area">
+        <option value="All">All Areas</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label for="filter-shift">Shift</label>
+      <select id="filter-shift">
+        <option value="All">All Shifts</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label for="filter-role">Role</label>
+      <select id="filter-role">
+        <option value="All">All Roles</option>
+      </select>
+    </div>
+
+    <!-- Roster Upload -->
+    <div class="filter-group">
+      <label>Roster</label>
+      <button id="btn-upload-roster" class="btn-roster" type="button">
+        👥 Upload Roster
+      </button>
+      <input type="file" id="file-roster" accept=".xlsx,.xls,.csv" class="sr-only">
+    </div>
+
+    <!-- FPA/LPA Import Button -->
+    <div class="filter-group">
+      <label>Reports</label>
+      <button id="btn-open-import" class="btn-import" type="button">
+        📂 Load FPA / LPA
+      </button>
+    </div>
+  </section>
+
+  <!-- Roster Status -->
+  <div id="roster-status" class="roster-status" role="status"></div>
+  <div style="margin:0 24px 4px; text-align:right;">
+    <button id="btn-clear-roster" class="btn-clear" type="button">Reset to Sample Roster</button>
+  </div>
+
+  <!-- Import Status -->
+  <div id="import-status" class="import-status" style="display:none;" role="alert"></div>
+
+  <!-- Import Modal Overlay -->
+  <div id="import-modal-overlay" class="modal-overlay" style="display:none;"></div>
+
+  <!-- Import Modal -->
+  <div id="import-modal" class="modal" aria-hidden="true" role="dialog"
+       aria-labelledby="modal-title">
+    <div class="modal-header">
+      <h2 id="modal-title">📂 Load FPA / LPA Reports</h2>
+      <button id="btn-close-modal" class="modal-close" aria-label="Close">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p class="modal-desc">Select FPAOF &amp; FPALD report files. Accepts <strong>.xlsx</strong>, <strong>.xls</strong>, or <strong>.csv</strong>.<br>
+        Names are matched from the saved <strong>Roster</strong> using User ID.</p>
+
+      <div class="modal-file-group">
+        <label for="file-fpaof" class="modal-file-label">
+          <span class="modal-file-icon">📦</span>
+          <span class="modal-file-text">
+            <strong>FPAOF</strong> (Orderfillers)
+            <small>User ID, Date, FPA Minutes, LPA Minutes — names pulled from Roster</small>
+          </span>
+        </label>
+        <input type="file" id="file-fpaof" accept=".xlsx,.xls,.csv" class="modal-file-input">
+      </div>
+
+      <div class="modal-file-group">
+        <label for="file-fpald" class="modal-file-label">
+          <span class="modal-file-icon">🚜</span>
+          <span class="modal-file-text">
+            <strong>FPALD</strong> (Lift Drivers)
+            <small>User ID, Date, FPA Minutes, LPA Minutes — names pulled from Roster</small>
+          </span>
+        </label>
+        <input type="file" id="file-fpald" accept=".xlsx,.xls,.csv" class="modal-file-input">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button id="btn-run-import" class="btn-primary" type="button">✅ Import All</button>
+    </div>
+  </div>
+
+  <!-- ========== FPA / LPA REPORT PANEL ========== -->
+  <div
+    class="tab-panel"
+    id="panel-fpa-lpa"
+    role="tabpanel"
+    aria-labelledby="tab-fpa-lpa"
+    aria-hidden="false"
+  >
+    <!-- Building Goal Section -->
+    <div class="building-goal-section">
+      <h2 class="section-title">🏢 Building Goal</h2>
+      <div class="building-goal-cards">
+        <div class="building-card building-card--target">
+          <div class="building-card-header">Target</div>
+          <div class="building-card-body">
+            <div class="building-stat">
+              <span class="building-label">FPA</span>
+              <span class="building-value">≤ 14 min</span>
+            </div>
+            <div class="building-stat">
+              <span class="building-label">LPA</span>
+              <span class="building-value">≤ 14 min</span>
+            </div>
+          </div>
+        </div>
+        <div class="building-card building-card--fpa">
+          <div class="building-card-header">FPA Building Performance</div>
+          <div class="building-card-body">
+            <div class="building-big-number" id="building-fpa-pct">0%</div>
+            <div class="building-subtext"><span id="building-fpa-count">0 / 0</span> on goal</div>
+          </div>
+        </div>
+        <div class="building-card building-card--lpa">
+          <div class="building-card-header">LPA Building Performance</div>
+          <div class="building-card-body">
+            <div class="building-big-number" id="building-lpa-pct">0%</div>
+            <div class="building-subtext"><span id="building-lpa-count">0 / 0</span> on goal</div>
+          </div>
+        </div>
+        <div class="building-card building-card--both">
+          <div class="building-card-header">Both On Building Goal</div>
+          <div class="building-card-body">
+            <div class="building-big-number" id="building-both-pct">0%</div>
+            <div class="building-subtext"><span id="building-both-count">0 / 0</span> associates</div>
+          </div>
+        </div>
+        <div class="building-card building-card--hours-lost">
+          <div class="building-card-header">⏱️ Hours Lost (Over Goal)</div>
+          <div class="building-card-body">
+            <div class="building-big-number" id="building-hours-lost">0.0</div>
+            <div class="building-subtext">hours</div>
+            <div class="hours-lost-breakdown">
+              <span id="hours-lost-fpa">FPA: 0 min</span>
+              <span id="hours-lost-lpa">LPA: 0 min</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Summary Cards (Area-Specific) -->
+    <h2 class="section-title">📊 Area-Specific Performance</h2>
+    <div class="summary-cards">
+      <div class="card card--blue">
+        <div class="card-value" id="card-total">0</div>
+        <div class="card-label">Total Associates</div>
+      </div>
+      <div class="card card--green">
+        <div class="card-value" id="card-fpa-above">0 / 0</div>
+        <div class="card-label">FPA On Goal (Dry/MP ≤14m, FDD ≤15m)</div>
+      </div>
+      <div class="card card--red">
+        <div class="card-value" id="card-fpa-off">0 / 0</div>
+        <div class="card-label">FPA Off Goal</div>
+      </div>
+      <div class="card card--green">
+        <div class="card-value" id="card-lpa-above">0 / 0</div>
+        <div class="card-label">LPA ≤ 14 min (On Goal)</div>
+      </div>
+      <div class="card card--red">
+        <div class="card-value" id="card-lpa-off">0 / 0</div>
+        <div class="card-label">LPA &gt; 14 min (Off Goal)</div>
+      </div>
+      <div class="card card--yellow">
+        <div class="card-value" id="card-both-above">0 / 0</div>
+        <div class="card-label">Both On Goal</div>
+      </div>
+    </div>
+
+    <!-- Area Breakdown -->
+    <h2 class="section-title">🏢 Breakdown by Area</h2>
+    <div class="table-container">
+      <table aria-label="FPA and LPA breakdown by area">
+        <thead>
+          <tr>
+            <th scope="col">Shift</th>
+            <th scope="col">Area</th>
+            <th scope="col">Total</th>
+            <th scope="col">FPA On Goal</th>
+            <th scope="col">FPA %</th>
+            <th scope="col">LPA On Goal</th>
+            <th scope="col">LPA %</th>
+          </tr>
+        </thead>
+        <tbody id="area-breakdown-tbody"></tbody>
+      </table>
+    </div>
+
+    <!-- Score Cards per Area + Shift -->
+    <h2 class="section-title">🏆 Score Cards by Area &amp; Shift <span style="font-weight:400;font-size:0.85rem;color:#555;">(click to expand)</span></h2>
+    <div id="scorecards-container" class="scorecards-container"></div>
+
+    <!-- Full Data Table -->
+    <h2 class="section-title">📋 All FPA / LPA Data</h2>
+    <div class="table-container">
+      <table aria-label="Complete FPA and LPA data for all associates">
+        <thead id="fpa-lpa-thead"></thead>
+        <tbody id="fpa-lpa-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ========== ASSOCIATE ROSTER PANEL ========== -->
+  <div
+    class="tab-panel"
+    id="panel-roster"
+    role="tabpanel"
+    aria-labelledby="tab-roster"
+    aria-hidden="true"
+  >
+    <div class="summary-cards">
+      <div class="card card--blue">
+        <div class="card-value" id="roster-count">0</div>
+        <div class="card-label">Associates in Roster</div>
+      </div>
+    </div>
+
+    <div id="roster-filter-indicator" class="roster-filter-indicator" role="status" style="display:none;"></div>
+    <h2 class="section-title">👥 Associate Roster</h2>
+    <div class="table-container">
+      <table aria-label="Associate roster">
+        <thead>
+          <tr>
+            <th scope="col">User ID</th>
+            <th scope="col">First Name</th>
+            <th scope="col">Last Name</th>
+            <th scope="col">Area</th>
+            <th scope="col">Shift</th>
+            <th scope="col">Role</th>
+          </tr>
+        </thead>
+        <tbody id="roster-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+<script>
+/**
+ * DC 6084 — FPA / LPA Dashboard Data
+ * Replace sample data with real feeds.
+ *
+ * FPA Goals (area-specific):
+ *   - Dry: ≤ 14 minutes
+ *   - FDD: ≤ 15 minutes
+ *   - MP:  ≤ 14 minutes
+ * LPA Goal: ≤ 14 minutes (all areas)
+ */
+
+const GOALS = Object.freeze({
+  // Area-specific FPA goals
+  FPA_MINUTES: {
+    DRY: 14,
+    FDD: 15,
+    MP:  14,
+    DEFAULT: 14,  // Fallback for unknown areas
+  },
+  LPA_MINUTES: 14,
+  // Building-wide goals (unified targets)
+  BUILDING: {
+    FPA_MINUTES: 14,
+    LPA_MINUTES: 14,
+  },
+});
+
+/**
+ * Get the FPA goal for a given area.
+ * Areas like "Dry 1st", "FDD 2nd", "MP 4th" are matched by prefix.
+ */
+function getFpaGoal(area) {
+  const areaUpper = String(area || '').toUpperCase();
+  if (areaUpper.startsWith('DRY')) return GOALS.FPA_MINUTES.DRY;
+  if (areaUpper.startsWith('FDD')) return GOALS.FPA_MINUTES.FDD;
+  if (areaUpper.startsWith('MP'))  return GOALS.FPA_MINUTES.MP;
+  return GOALS.FPA_MINUTES.DEFAULT;
+}
+
+/**
+ * Associate Roster — DC 6084
+ * This is the source of truth for names, areas, shifts, and roles.
+ */
+const ASSOCIATE_ROSTER = [
+  // --- Dry 1st ---
+  { userId: 'D6-1001', name: 'John Smith',       area: 'Dry 1st', shift: '1st', role: 'Orderfiller' },
+  { userId: 'D6-1002', name: 'Jane Doe',         area: 'Dry 1st', shift: '1st', role: 'Orderfiller' },
+  { userId: 'D6-1003', name: 'Mike Johnson',     area: 'Dry 1st', shift: '1st', role: 'Lift Driver' },
+  { userId: 'D6-1004', name: 'Sarah Williams',   area: 'Dry 1st', shift: '1st', role: 'Orderfiller' },
+  { userId: 'D6-1005', name: 'Tom Brown',        area: 'Dry 1st', shift: '1st', role: 'Lift Driver' },
+  // --- Dry 2nd ---
+  { userId: 'D6-1006', name: 'Lisa Davis',       area: 'Dry 2nd', shift: '2nd', role: 'Orderfiller' },
+  { userId: 'D6-1007', name: 'Chris Miller',     area: 'Dry 2nd', shift: '2nd', role: 'Lift Driver' },
+  { userId: 'D6-1008', name: 'Amy Wilson',       area: 'Dry 2nd', shift: '2nd', role: 'Orderfiller' },
+  { userId: 'D6-1009', name: 'David Moore',      area: 'Dry 2nd', shift: '2nd', role: 'Orderfiller' },
+  { userId: 'D6-1010', name: 'Karen Taylor',     area: 'Dry 2nd', shift: '2nd', role: 'Lift Driver' },
+  // --- Dry 4th ---
+  { userId: 'D6-1011', name: 'James Anderson',   area: 'Dry 4th', shift: '4th', role: 'Orderfiller' },
+  { userId: 'D6-1012', name: 'Emily Thomas',     area: 'Dry 4th', shift: '4th', role: 'Orderfiller' },
+  { userId: 'D6-1013', name: 'Robert Jackson',   area: 'Dry 4th', shift: '4th', role: 'Lift Driver' },
+  { userId: 'D6-1014', name: 'Maria Garcia',     area: 'Dry 4th', shift: '4th', role: 'Orderfiller' },
+  { userId: 'D6-1015', name: 'Kevin White',      area: 'Dry 4th', shift: '4th', role: 'Lift Driver' },
+  // --- Dry 5th ---
+  { userId: 'D6-1016', name: 'Nancy Harris',     area: 'Dry 5th', shift: '5th', role: 'Orderfiller' },
+  { userId: 'D6-1017', name: 'Steven Martin',    area: 'Dry 5th', shift: '5th', role: 'Lift Driver' },
+  { userId: 'D6-1018', name: 'Laura Lee',        area: 'Dry 5th', shift: '5th', role: 'Orderfiller' },
+  { userId: 'D6-1019', name: 'Brian Clark',      area: 'Dry 5th', shift: '5th', role: 'Orderfiller' },
+  { userId: 'D6-1020', name: 'Sandra Lewis',     area: 'Dry 5th', shift: '5th', role: 'Lift Driver' },
+
+  // --- FDD 1st ---
+  { userId: 'D6-2001', name: 'Paul Robinson',    area: 'FDD 1st', shift: '1st', role: 'Orderfiller' },
+  { userId: 'D6-2002', name: 'Donna Walker',     area: 'FDD 1st', shift: '1st', role: 'Lift Driver' },
+  { userId: 'D6-2003', name: 'Mark Hall',        area: 'FDD 1st', shift: '1st', role: 'Orderfiller' },
+  { userId: 'D6-2004', name: 'Patricia Adams',   area: 'FDD 1st', shift: '1st', role: 'Orderfiller' },
+  { userId: 'D6-2005', name: 'Charles Nelson',   area: 'FDD 1st', shift: '1st', role: 'Lift Driver' },
+  // --- FDD 2nd ---
+  { userId: 'D6-2006', name: 'Margaret Hill',    area: 'FDD 2nd', shift: '2nd', role: 'Orderfiller' },
+  { userId: 'D6-2007', name: 'Kenneth King',     area: 'FDD 2nd', shift: '2nd', role: 'Lift Driver' },
+  { userId: 'D6-2008', name: 'Dorothy Wright',   area: 'FDD 2nd', shift: '2nd', role: 'Orderfiller' },
+  { userId: 'D6-2009', name: 'Frank Lopez',      area: 'FDD 2nd', shift: '2nd', role: 'Orderfiller' },
+  { userId: 'D6-2010', name: 'Ruth Gonzalez',    area: 'FDD 2nd', shift: '2nd', role: 'Lift Driver' },
+  // --- FDD 4th ---
+  { userId: 'D6-2011', name: 'Raymond Perez',    area: 'FDD 4th', shift: '4th', role: 'Orderfiller' },
+  { userId: 'D6-2012', name: 'Helen Campbell',   area: 'FDD 4th', shift: '4th', role: 'Lift Driver' },
+  { userId: 'D6-2013', name: 'Jerry Mitchell',   area: 'FDD 4th', shift: '4th', role: 'Orderfiller' },
+  { userId: 'D6-2014', name: 'Debra Roberts',    area: 'FDD 4th', shift: '4th', role: 'Orderfiller' },
+  { userId: 'D6-2015', name: 'Walter Carter',    area: 'FDD 4th', shift: '4th', role: 'Lift Driver' },
+  // --- FDD 5th ---
+  { userId: 'D6-2016', name: 'Carol Phillips',   area: 'FDD 5th', shift: '5th', role: 'Orderfiller' },
+  { userId: 'D6-2017', name: 'Roger Evans',      area: 'FDD 5th', shift: '5th', role: 'Lift Driver' },
+  { userId: 'D6-2018', name: 'Sharon Turner',    area: 'FDD 5th', shift: '5th', role: 'Orderfiller' },
+  { userId: 'D6-2019', name: 'Dennis Scott',     area: 'FDD 5th', shift: '5th', role: 'Orderfiller' },
+  { userId: 'D6-2020', name: 'Betty Allen',      area: 'FDD 5th', shift: '5th', role: 'Lift Driver' },
+
+  // --- MP 1st ---
+  { userId: 'D6-3001', name: 'George Young',     area: 'MP 1st',  shift: '1st', role: 'Orderfiller' },
+  { userId: 'D6-3002', name: 'Angela Baker',     area: 'MP 1st',  shift: '1st', role: 'Lift Driver' },
+  { userId: 'D6-3003', name: 'Timothy Green',    area: 'MP 1st',  shift: '1st', role: 'Orderfiller' },
+  { userId: 'D6-3004', name: 'Kimberly Edwards', area: 'MP 1st',  shift: '1st', role: 'Orderfiller' },
+  { userId: 'D6-3005', name: 'Jason Collins',    area: 'MP 1st',  shift: '1st', role: 'Lift Driver' },
+  // --- MP 2nd ---
+  { userId: 'D6-3006', name: 'Stephanie Stewart',area: 'MP 2nd',  shift: '2nd', role: 'Orderfiller' },
+  { userId: 'D6-3007', name: 'Aaron Sanchez',    area: 'MP 2nd',  shift: '2nd', role: 'Lift Driver' },
+  { userId: 'D6-3008', name: 'Michelle Morris',  area: 'MP 2nd',  shift: '2nd', role: 'Orderfiller' },
+  { userId: 'D6-3009', name: 'Justin Rogers',    area: 'MP 2nd',  shift: '2nd', role: 'Orderfiller' },
+  { userId: 'D6-3010', name: 'Rebecca Reed',     area: 'MP 2nd',  shift: '2nd', role: 'Lift Driver' },
+  // --- MP 4th ---
+  { userId: 'D6-3011', name: 'Ryan Cook',        area: 'MP 4th',  shift: '4th', role: 'Orderfiller' },
+  { userId: 'D6-3012', name: 'Laura Morgan',     area: 'MP 4th',  shift: '4th', role: 'Lift Driver' },
+  { userId: 'D6-3013', name: 'Brandon Bell',     area: 'MP 4th',  shift: '4th', role: 'Orderfiller' },
+  { userId: 'D6-3014', name: 'Amanda Murphy',    area: 'MP 4th',  shift: '4th', role: 'Orderfiller' },
+  { userId: 'D6-3015', name: 'Tyler Bailey',     area: 'MP 4th',  shift: '4th', role: 'Lift Driver' },
+  // --- MP 5th ---
+  { userId: 'D6-3016', name: 'Megan Rivera',     area: 'MP 5th',  shift: '5th', role: 'Orderfiller' },
+  { userId: 'D6-3017', name: 'Nathan Cooper',    area: 'MP 5th',  shift: '5th', role: 'Lift Driver' },
+  { userId: 'D6-3018', name: 'Samantha Cox',     area: 'MP 5th',  shift: '5th', role: 'Orderfiller' },
+  { userId: 'D6-3019', name: 'Dylan Howard',     area: 'MP 5th',  shift: '5th', role: 'Orderfiller' },
+  { userId: 'D6-3020', name: 'Kayla Ward',       area: 'MP 5th',  shift: '5th', role: 'Lift Driver' },
+];
+
+/**
+ * FPA/LPA records — starts empty.
+ * Populated when user uploads FPAOF / FPALD reports via the import modal.
+ * Names, areas, shifts come from the Roster (matched by User ID).
+ */
+// Keep a copy of the sample roster so we can reset to it
+const SAMPLE_ROSTER = ASSOCIATE_ROSTER.map(r => ({ ...r }));
+
+const FPA_LPA_DATA = [];
+
+</script>
+<script>
+/**
+ * DC 6084 — FPA / LPA Dashboard — Main Application Logic
+ * Handles filtering, calculations, score cards, and DOM rendering.
+ */
+
+/* ============================================================
+   DOM References
+   ============================================================ */
+const dom = {
+  areaFilter:          () => document.getElementById('filter-area'),
+  shiftFilter:         () => document.getElementById('filter-shift'),
+  roleFilter:          () => document.getElementById('filter-role'),
+  tabButtons:          () => document.querySelectorAll('.tab-btn'),
+  tabPanels:           () => document.querySelectorAll('.tab-panel'),
+  dateBadge:           () => document.querySelector('.date-badge'),
+  cardTotal:           () => document.getElementById('card-total'),
+  cardFpaAbove:        () => document.getElementById('card-fpa-above'),
+  cardFpaOff:           () => document.getElementById('card-fpa-off'),
+  cardLpaAbove:        () => document.getElementById('card-lpa-above'),
+  cardLpaOff:           () => document.getElementById('card-lpa-off'),
+  cardBothAbove:       () => document.getElementById('card-both-above'),
+  areaBreakdownBody:   () => document.getElementById('area-breakdown-tbody'),
+  scorecardsContainer: () => document.getElementById('scorecards-container'),
+  fpaLpaTableBody:     () => document.getElementById('fpa-lpa-tbody'),
+  rosterTableBody:     () => document.getElementById('roster-tbody'),
+  rosterCount:         () => document.getElementById('roster-count'),
+  // Building Goal elements
+  buildingFpaPct:      () => document.getElementById('building-fpa-pct'),
+  buildingFpaCount:    () => document.getElementById('building-fpa-count'),
+  buildingLpaPct:      () => document.getElementById('building-lpa-pct'),
+  buildingLpaCount:    () => document.getElementById('building-lpa-count'),
+  buildingBothPct:     () => document.getElementById('building-both-pct'),
+  buildingBothCount:   () => document.getElementById('building-both-count'),
+  buildingHoursLost:   () => document.getElementById('building-hours-lost'),
+  hoursLostFpa:        () => document.getElementById('hours-lost-fpa'),
+  hoursLostLpa:        () => document.getElementById('hours-lost-lpa'),
+};
+
+/* ============================================================
+   Helpers
+   ============================================================ */
+
+/**
+ * Normalize a User ID for matching — trim whitespace, uppercase.
+ * This way 'd6-1001', 'D6-1001', ' D6-1001 ' all match.
+ */
+function normalizeId(id) {
+  return String(id || '').trim().toUpperCase();
+}
+
+/**
+ * Build a lookup map from the current roster, keyed by normalized User ID.
+ * Called fresh each render so it always uses the latest uploaded roster.
+ */
+function buildRosterMap() {
+  const map = new Map();
+  ASSOCIATE_ROSTER.forEach(a => map.set(normalizeId(a.userId), a));
+  return map;
+}
+
+/**
+ * Join FPA/LPA records with the uploaded roster by User ID.
+ * All display fields (name, area, shift, role) come from the roster.
+ * Records with no roster match are silently skipped.
+ */
+function getEnrichedData() {
+  const rosterMap = buildRosterMap();
+
+  const enriched = FPA_LPA_DATA
+    .filter(d => rosterMap.has(normalizeId(d.userId)))
+    .map(d => {
+      const match = rosterMap.get(normalizeId(d.userId));
+
+      // Pull first/last name from roster — support both split and combined
+      let firstName = '';
+      let lastName  = '';
+      if (match.firstName) {
+        firstName = match.firstName;
+        lastName  = match.lastName || '';
+      } else if (match.name) {
+        const parts = String(match.name).trim().split(/\s+/);
+        firstName = parts[0] || '';
+        lastName  = parts.slice(1).join(' ') || '';
+      }
+
+      return {
+        userId:     d.userId,
+        date:       d.date        || '',
+        fpaMinutes: d.fpaMinutes  || 0,
+        lpaMinutes: d.lpaMinutes  || 0,
+        firstName,
+        lastName,
+        area:       match.area  || '',
+        shift:      match.shift || '',
+        // Use the role from the FPA/LPA import (determined by file: FPAOF=Orderfiller, FPALD=Lift Driver)
+        // This ensures score card bottom-5 tables work regardless of roster role naming
+        role:       d.role || match.role || '',
+      };
+    });
+
+  // Log for debugging — open DevTools (F12) to verify
+  const skipped = FPA_LPA_DATA.length - enriched.length;
+  console.log(`Enrichment: ${enriched.length} matched, ${skipped} skipped (no roster match) out of ${FPA_LPA_DATA.length} records`);
+  if (enriched.length > 0) console.log('First enriched record:', enriched[0]);
+
+  return enriched;
+}
+
+function getFilterValues() {
+  return {
+    area:  dom.areaFilter().value,
+    shift: dom.shiftFilter().value,
+    role:  dom.roleFilter().value,
+  };
+}
+
+function applyFilters(records) {
+  const { area, shift, role } = getFilterValues();
+  return records.filter(r =>
+    (area  === 'All' || r.area  === area) &&
+    (shift === 'All' || r.shift === shift) &&
+    (role  === 'All' || r.role  === role)
+  );
+}
+
+/**
+ * Check if FPA minutes pass the goal for a given area.
+ * Uses area-specific goals: Dry=14, FDD=15, MP=14
+ */
+function fpaPasses(min, area) { return min <= getFpaGoal(area); }
+function lpaPasses(min) { return min <= GOALS.LPA_MINUTES; }
+
+function badge(passes) {
+  const cls  = passes ? 'badge--pass' : 'badge--fail';
+  const text = passes ? 'On Goal' : 'Off Goal';
+  return `<span class="badge ${cls}" aria-label="${text}">${text}</span>`;
+}
+
+/** Sort order for shifts — 1st, 2nd, 4th, 5th */
+function shiftSortKey(shift) {
+  const s = String(shift || '').replace(/\D/g, '');
+  return parseInt(s, 10) || 999;
+}
+
+/** Compare two records: shift first, then area alphabetically, then role */
+function compareShiftAreaRole(a, b) {
+  const shiftA = shiftSortKey(a.shift);
+  const shiftB = shiftSortKey(b.shift);
+  if (shiftA !== shiftB) return shiftA - shiftB;
+  const areaComp = String(a.area || '').localeCompare(String(b.area || ''));
+  if (areaComp !== 0) return areaComp;
+  return String(a.role || '').localeCompare(String(b.role || ''));
+}
+
+function emptyRow(cols, msg) {
+  return `<tr><td colspan="${cols}" style="text-align:center;padding:20px;">${msg}</td></tr>`;
+}
+
+function calcStats(records) {
+  const total     = records.length;
+  const fpaGood   = records.filter(r => fpaPasses(r.fpaMinutes, r.area)).length;
+  const lpaGood   = records.filter(r => lpaPasses(r.lpaMinutes)).length;
+  const bothGood  = records.filter(r => fpaPasses(r.fpaMinutes, r.area) && lpaPasses(r.lpaMinutes)).length;
+  return { total, fpaGood, lpaGood, bothGood };
+}
+
+/**
+ * Update the header date badge with the report date from uploaded filenames.
+ * REPORT_DATE is set in import.js when FPA/LPA files are uploaded.
+ */
+function updateReportDateBadge() {
+  const badge = dom.dateBadge();
+  if (!badge) return;
+
+  // REPORT_DATE is set in import.js from the uploaded filename (e.g., "FPAOF_2026-02-18.xlsx")
+  if (typeof REPORT_DATE !== 'undefined' && REPORT_DATE instanceof Date && !isNaN(REPORT_DATE.getTime())) {
+    const formatted = REPORT_DATE.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+    badge.textContent = formatted;
+    console.log('Report date badge updated from filename:', formatted);
+    return;
+  }
+
+  // Fallback: check if any FPA/LPA data is loaded
+  if (!FPA_LPA_DATA || FPA_LPA_DATA.length === 0) {
+    badge.textContent = 'No Data Loaded';
+    return;
+  }
+
+  // If we have data but no REPORT_DATE, show "Date Unknown"
+  badge.textContent = 'Date Unknown';
+}
+
+/* ============================================================
+   Renderers
+   ============================================================ */
+
+/**
+ * Check if FPA minutes pass the BUILDING goal (unified 14 min target).
+ */
+function fpaPassesBuilding(min) { return min <= GOALS.BUILDING.FPA_MINUTES; }
+function lpaPassesBuilding(min) { return min <= GOALS.BUILDING.LPA_MINUTES; }
+
+/**
+ * Render the Building Goal section with unified targets.
+ * Uses GOALS.BUILDING for building-wide goals (14 min for both FPA & LPA).
+ */
+function renderBuildingGoal(filtered) {
+  const total = filtered.length;
+  
+  // Calculate against BUILDING goals (not area-specific)
+  const fpaGood = filtered.filter(r => fpaPassesBuilding(r.fpaMinutes)).length;
+  const lpaGood = filtered.filter(r => lpaPassesBuilding(r.lpaMinutes)).length;
+  const bothGood = filtered.filter(r => fpaPassesBuilding(r.fpaMinutes) && lpaPassesBuilding(r.lpaMinutes)).length;
+  
+  const fpaPct = total > 0 ? Math.round((fpaGood / total) * 100) : 0;
+  const lpaPct = total > 0 ? Math.round((lpaGood / total) * 100) : 0;
+  const bothPct = total > 0 ? Math.round((bothGood / total) * 100) : 0;
+  
+  // Calculate Hours Lost (minutes over goal for all associates)
+  let fpaMinutesLost = 0;
+  let lpaMinutesLost = 0;
+  
+  filtered.forEach(r => {
+    // Use AREA-SPECIFIC goals for calculating time lost
+    const fpaGoal = getFpaGoal(r.area);
+    const lpaGoal = GOALS.LPA_MINUTES;
+    
+    if (r.fpaMinutes > fpaGoal) {
+      fpaMinutesLost += (r.fpaMinutes - fpaGoal);
+    }
+    if (r.lpaMinutes > lpaGoal) {
+      lpaMinutesLost += (r.lpaMinutes - lpaGoal);
+    }
+  });
+  
+  const totalMinutesLost = fpaMinutesLost + lpaMinutesLost;
+  const hoursLost = (totalMinutesLost / 60).toFixed(1);
+  
+  // Update DOM
+  const fpaEl = dom.buildingFpaPct();
+  const lpaEl = dom.buildingLpaPct();
+  const bothEl = dom.buildingBothPct();
+  
+  if (fpaEl) {
+    fpaEl.textContent = `${fpaPct}%`;
+    fpaEl.className = `building-big-number ${getStatusClass(fpaPct)}`;
+  }
+  if (dom.buildingFpaCount()) {
+    dom.buildingFpaCount().textContent = `${fpaGood} / ${total}`;
+  }
+  
+  if (lpaEl) {
+    lpaEl.textContent = `${lpaPct}%`;
+    lpaEl.className = `building-big-number ${getStatusClass(lpaPct)}`;
+  }
+  if (dom.buildingLpaCount()) {
+    dom.buildingLpaCount().textContent = `${lpaGood} / ${total}`;
+  }
+  
+  if (bothEl) {
+    bothEl.textContent = `${bothPct}%`;
+    bothEl.className = `building-big-number ${getStatusClass(bothPct)}`;
+  }
+  if (dom.buildingBothCount()) {
+    dom.buildingBothCount().textContent = `${bothGood} / ${total}`;
+  }
+  
+  // Update Hours Lost
+  if (dom.buildingHoursLost()) {
+    dom.buildingHoursLost().textContent = hoursLost;
+    // Color code based on hours lost
+    const hoursNum = parseFloat(hoursLost);
+    let hoursClass = 'status-great';
+    if (hoursNum > 2) hoursClass = 'status-poor';
+    else if (hoursNum > 0.5) hoursClass = 'status-good';
+    dom.buildingHoursLost().className = `building-big-number ${hoursClass}`;
+  }
+  if (dom.hoursLostFpa()) {
+    dom.hoursLostFpa().textContent = `FPA: ${fpaMinutesLost} min`;
+  }
+  if (dom.hoursLostLpa()) {
+    dom.hoursLostLpa().textContent = `LPA: ${lpaMinutesLost} min`;
+  }
+}
+
+/**
+ * Get CSS class based on percentage for color coding.
+ */
+function getStatusClass(pct) {
+  if (pct >= 80) return 'status-great';
+  if (pct >= 60) return 'status-good';
+  return 'status-poor';
+}
+
+function renderSummaryCards(filtered) {
+  const { total, fpaGood, lpaGood, bothGood } = calcStats(filtered);
+  const fpaOff = total - fpaGood;
+  const lpaOff = total - lpaGood;
+  dom.cardTotal().textContent     = total;
+  dom.cardFpaAbove().textContent  = `${fpaGood} / ${total}`;
+  dom.cardFpaOff().textContent    = `${fpaOff} / ${total}`;
+  dom.cardLpaAbove().textContent  = `${lpaGood} / ${total}`;
+  dom.cardLpaOff().textContent    = `${lpaOff} / ${total}`;
+  dom.cardBothAbove().textContent = `${bothGood} / ${total}`;
+}
+
+function renderAreaBreakdown(filtered) {
+  const tbody = dom.areaBreakdownBody();
+
+  // Group by shift + area
+  const groupKey = (r) => `${r.shift}|||${r.area}`;
+  const groups = new Map();
+  filtered.forEach(r => {
+    const key = groupKey(r);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(r);
+  });
+
+  // Sort group keys by shift → area
+  const sortedKeys = [...groups.keys()].sort((a, b) => {
+    const [shiftA, areaA] = a.split('|||');
+    const [shiftB, areaB] = b.split('|||');
+    return compareShiftAreaRole(
+      { shift: shiftA, area: areaA, role: '' },
+      { shift: shiftB, area: areaB, role: '' }
+    );
+  });
+
+  const rows = [];
+  for (const key of sortedKeys) {
+    const records = groups.get(key);
+    const [shift, area] = key.split('|||');
+    const { total, fpaGood, lpaGood } = calcStats(records);
+    const fpaPct = Math.round((fpaGood / total) * 100);
+    const lpaPct = Math.round((lpaGood / total) * 100);
+
+    rows.push(`
+      <tr>
+        <td><strong>${shift}</strong></td>
+        <td>${area}</td>
+        <td>${total}</td>
+        <td>${fpaGood} / ${total}</td>
+        <td><span class="badge ${fpaPct >= 80 ? 'badge--pass' : 'badge--fail'}">${fpaPct}%</span></td>
+        <td>${lpaGood} / ${total}</td>
+        <td><span class="badge ${lpaPct >= 80 ? 'badge--pass' : 'badge--fail'}">${lpaPct}%</span></td>
+      </tr>
+    `);
+  }
+
+  tbody.innerHTML = rows.length > 0 ? rows.join('') : emptyRow(7, '📂 No FPA/LPA data loaded. Click <strong>Load FPA / LPA</strong> above to import reports.');
+}
+
+/* ============================================================
+   SCORE CARDS — per Area
+   ============================================================ */
+
+function buildBottom5Html(records, metric, label, role) {
+  const key = metric === 'fpa' ? 'fpaMinutes' : 'lpaMinutes';
+  const byRole = records.filter(r => r.role === role);
+  
+  // Only include associates who are OFF goal
+  const offGoal = byRole.filter(r => {
+    if (metric === 'fpa') {
+      return !fpaPasses(r.fpaMinutes, r.area);  // Area-specific FPA goal
+    } else {
+      return !lpaPasses(r.lpaMinutes);  // LPA goal (14 min for all)
+    }
+  });
+  
+  // Sort by worst (highest minutes) first, take top 5
+  const sorted = [...offGoal].sort((a, b) => b[key] - a[key]).slice(0, 5);
+
+  if (sorted.length === 0) {
+    return `<div class="table-container">
+      <table aria-label="${label}"><caption class="table-caption">${label}</caption>
+      <tbody>${emptyRow(5, '✅ All on goal!')}</tbody></table></div>`;
+  }
+
+  const rows = sorted.map((r, i) => {
+    const goal = metric === 'fpa' ? getFpaGoal(r.area) : GOALS.LPA_MINUTES;
+    const overBy = r[key] - goal;
+    return `
+      <tr class="bottom-five">
+        <td>${i + 1}</td>
+        <td>${r.userId}</td>
+        <td>${r.firstName}</td>
+        <td>${r.lastName}</td>
+        <td>${r[key]} min <span class="over-goal">(+${overBy})</span></td>
+      </tr>
+    `;
+  }).join('');
+
+  return `
+    <div class="table-container">
+      <table aria-label="${label}">
+        <caption class="table-caption">${label} <span class="off-goal-count">(${offGoal.length} off goal)</span></caption>
+        <thead><tr>
+          <th scope="col">#</th>
+          <th scope="col">User ID</th>
+          <th scope="col">First Name</th>
+          <th scope="col">Last Name</th>
+          <th scope="col">${metric === 'fpa' ? 'FPA' : 'LPA'} (min)</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderScoreCards(filtered) {
+  const container = dom.scorecardsContainer();
+
+  // Group by shift + area dynamically from the data
+  const groupKey = (r) => `${r.shift}|||${r.area}`;
+  const grouped = new Map();
+  filtered.forEach(r => {
+    const key = groupKey(r);
+    if (!grouped.has(key)) grouped.set(key, []);
+    grouped.get(key).push(r);
+  });
+
+  // Sort groups: shift → area
+  const sortedKeys = [...grouped.keys()].sort((a, b) => {
+    const [shiftA, areaA] = a.split('|||');
+    const [shiftB, areaB] = b.split('|||');
+    return compareShiftAreaRole(
+      { shift: shiftA, area: areaA, role: '' },
+      { shift: shiftB, area: areaB, role: '' }
+    );
+  });
+
+  let html = '';
+
+  for (const key of sortedKeys) {
+    const records = grouped.get(key);
+    const [shift, area] = key.split('|||');
+    if (records.length === 0) continue;
+
+    const { total, fpaGood, lpaGood, bothGood } = calcStats(records);
+    const cardId = `sc-${area}-${shift}`.replace(/[^a-zA-Z0-9]/g, '-');
+
+      html += `
+        <div class="scorecard" id="${cardId}" aria-expanded="false">
+          <button class="scorecard-header" aria-controls="${cardId}-body"
+                  onclick="toggleScorecard('${cardId}')">
+            <span class="scorecard-title">
+              <span>🏢 ${shift} Shift — ${area}</span>
+            </span>
+            <span class="scorecard-stats">
+              <span class="stat">👥 ${total}</span>
+              <span class="stat stat-good">FPA: ${fpaGood}/${total}</span>
+              <span class="stat stat-${lpaGood === total ? 'good' : 'bad'}">LPA: ${lpaGood}/${total}</span>
+              <span class="stat stat-${bothGood === total ? 'good' : 'bad'}">Both: ${bothGood}/${total}</span>
+            </span>
+            <span class="scorecard-chevron" aria-hidden="true">▼</span>
+          </button>
+          <div class="scorecard-body" id="${cardId}-body">
+            <div class="scorecard-mini-cards">
+              <div class="mini-card mini--blue">
+                <div class="mini-val">${total}</div>
+                <div class="mini-lbl">Total</div>
+              </div>
+              <div class="mini-card mini--green">
+                <div class="mini-val">${fpaGood}/${total}</div>
+                <div class="mini-lbl">FPA ≤ ${getFpaGoal(area)}m</div>
+              </div>
+              <div class="mini-card mini--green">
+                <div class="mini-val">${lpaGood}/${total}</div>
+                <div class="mini-lbl">LPA ≤ ${GOALS.LPA_MINUTES}m</div>
+              </div>
+              <div class="mini-card mini--yellow">
+                <div class="mini-val">${bothGood}/${total}</div>
+                <div class="mini-lbl">Both On Goal</div>
+              </div>
+            </div>
+            <h3 class="scorecard-subtitle">Orderfillers</h3>
+            <div class="bottom5-grid">
+              ${buildBottom5Html(records, 'fpa', 'Bottom 5 FPA', 'Orderfiller')}
+              ${buildBottom5Html(records, 'lpa', 'Bottom 5 LPA', 'Orderfiller')}
+            </div>
+            <h3 class="scorecard-subtitle">Lift Drivers</h3>
+            <div class="bottom5-grid">
+              ${buildBottom5Html(records, 'fpa', 'Bottom 5 FPA', 'Lift Driver')}
+              ${buildBottom5Html(records, 'lpa', 'Bottom 5 LPA', 'Lift Driver')}
+            </div>
+          </div>
+        </div>
+      `;
+  }
+
+  container.innerHTML = html || '<p style="padding:16px;color:#555;">📂 No FPA/LPA data loaded. Click <strong>Load FPA / LPA</strong> above to import reports.</p>';
+}
+
+/** Toggle a scorecard open/closed */
+function toggleScorecard(id) {
+  const card = document.getElementById(id);
+  const isOpen = card.getAttribute('aria-expanded') === 'true';
+  card.setAttribute('aria-expanded', !isOpen);
+}
+
+/* ============================================================
+   Full Data Table — Sortable Columns
+   ============================================================ */
+
+const tableSort = { col: '_shift', asc: true };
+
+const SORT_COLUMNS = [
+  { key: 'userId',     label: 'User ID',    type: 'string' },
+  { key: '_firstName', label: 'First Name', type: 'string' },
+  { key: '_lastName',  label: 'Last Name',  type: 'string' },
+  { key: '_shift',     label: 'Shift',      type: 'string' },
+  { key: '_baseArea',  label: 'Area',       type: 'string' },
+  { key: 'role',       label: 'Role',       type: 'string' },
+  { key: 'fpaMinutes', label: 'FPA',        type: 'number' },
+  { key: 'lpaMinutes', label: 'LPA',        type: 'number' },
+  { key: '_overall',   label: 'Overall',    type: 'string' },
+];
+
+function sortArrow(colKey) {
+  if (tableSort.col !== colKey) return '';
+  return tableSort.asc ? ' \u25B2' : ' \u25BC';
+}
+
+function handleSort(colKey) {
+  if (tableSort.col === colKey) {
+    tableSort.asc = !tableSort.asc;
+  } else {
+    tableSort.col = colKey;
+    tableSort.asc = true;
+  }
+  renderAll();
+}
+
+function renderFpaLpaTable(filtered) {
+  const tbody = dom.fpaLpaTableBody();
+  const thead = document.getElementById('fpa-lpa-thead');
+
+  // Render sortable headers
+  thead.innerHTML = `<tr>${SORT_COLUMNS.map(c =>
+    `<th scope="col" class="sortable-th" data-col="${c.key}" 
+        role="button" tabindex="0" aria-label="Sort by ${c.label}">
+      ${c.label}${sortArrow(c.key)}
+    </th>`
+  ).join('')}</tr>`;
+
+  // Attach click + keyboard handlers
+  thead.querySelectorAll('.sortable-th').forEach(th => {
+    const col = th.dataset.col;
+    th.addEventListener('click', () => handleSort(col));
+    th.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleSort(col); }
+    });
+  });
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = emptyRow(9, '📂 No FPA/LPA data loaded. Click <strong>Load FPA / LPA</strong> above to import reports.');
+    return;
+  }
+
+  // Enrich with computed sort fields
+  const enriched = filtered.map(r => {
+    return {
+      ...r,
+      _firstName: r.firstName,
+      _lastName:  r.lastName,
+      _baseArea:  r.area,
+      _shift:     r.shift,
+      _overall:   (fpaPasses(r.fpaMinutes, r.area) && lpaPasses(r.lpaMinutes)) ? 'On Goal' : 'Off Goal',
+    };
+  });
+
+  // Sort — always tie-break with shift → area → role
+  const col = SORT_COLUMNS.find(c => c.key === tableSort.col);
+  const sorted = [...enriched].sort((a, b) => {
+    let va = a[tableSort.col], vb = b[tableSort.col];
+    if (col && col.type === 'string') {
+      va = String(va).toLowerCase();
+      vb = String(vb).toLowerCase();
+    }
+    let result = 0;
+    if (va < vb) result = -1;
+    else if (va > vb) result = 1;
+    if (!tableSort.asc) result = -result;
+    // Tiebreaker: shift → area → role
+    if (result === 0) result = compareShiftAreaRole(a, b);
+    return result;
+  });
+
+  tbody.innerHTML = sorted.map(r => {
+    const onGoal = fpaPasses(r.fpaMinutes, r.area) && lpaPasses(r.lpaMinutes);
+    return `
+    <tr class="${onGoal ? '' : 'row--off-goal'}">
+      <td>${r.userId}</td>
+      <td>${r._firstName}</td>
+      <td>${r._lastName}</td>
+      <td>${r._shift}</td>
+      <td>${r._baseArea}</td>
+      <td>${r.role}</td>
+      <td>${r.fpaMinutes} min ${badge(fpaPasses(r.fpaMinutes, r.area))}</td>
+      <td>${r.lpaMinutes} min ${badge(lpaPasses(r.lpaMinutes))}</td>
+      <td>${badge(onGoal)}</td>
+    </tr>
+  `;
+  }).join('');
+}
+
+/* ============================================================
+   Roster
+   ============================================================ */
+
+function renderRoster() {
+  const { area, shift, role } = getFilterValues();
+  const filtered = ASSOCIATE_ROSTER.filter(r =>
+    (area  === 'All' || r.area  === area) &&
+    (shift === 'All' || r.shift === shift) &&
+    (role  === 'All' || r.role  === role)
+  );
+
+  const total = ASSOCIATE_ROSTER.length;
+  const isFiltered = area !== 'All' || shift !== 'All' || role !== 'All';
+  dom.rosterCount().innerHTML = isFiltered
+    ? `${filtered.length} <span style="font-size:0.9rem;font-weight:400;">of ${total}</span>`
+    : `${total}`;
+
+  // Update filter indicator
+  const indicatorEl = document.getElementById('roster-filter-indicator');
+  if (indicatorEl) {
+    if (isFiltered) {
+      const parts = [];
+      if (area  !== 'All') parts.push(`Area: ${area}`);
+      if (shift !== 'All') parts.push(`Shift: ${shift}`);
+      if (role  !== 'All') parts.push(`Role: ${role}`);
+      indicatorEl.innerHTML = `🔍 Filtered by ${parts.join(', ')} — showing ${filtered.length} of ${total} associates`;
+      indicatorEl.style.display = 'block';
+    } else {
+      indicatorEl.style.display = 'none';
+    }
+  }
+
+  const tbody = dom.rosterTableBody();
+
+  // Sort roster: shift → area → role
+  const sorted = [...filtered].sort(compareShiftAreaRole);
+
+  if (sorted.length === 0) {
+    tbody.innerHTML = emptyRow(6, 'No associates match selected filters.');
+    return;
+  }
+
+  tbody.innerHTML = sorted.map(r => {
+    // Use firstName/lastName if set (uploaded roster), otherwise split name
+    let first = r.firstName || '';
+    let last  = r.lastName  || '';
+    if (!first && r.name) {
+      const parts = String(r.name).trim().split(/\s+/);
+      first = parts[0] || '';
+      last  = parts.slice(1).join(' ') || '';
+    }
+    return `
+      <tr>
+        <td>${r.userId}</td>
+        <td>${first}</td>
+        <td>${last}</td>
+        <td>${r.area}</td>
+        <td>${r.shift}</td>
+        <td>${r.role}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+/* ============================================================
+   Master Render
+   ============================================================ */
+
+function renderAll() {
+  console.log('renderAll: Roster has', ASSOCIATE_ROSTER.length, 'entries. FPA/LPA has', FPA_LPA_DATA.length, 'entries.');
+  if (ASSOCIATE_ROSTER.length > 0) {
+    console.log('Roster[0]:', JSON.stringify(ASSOCIATE_ROSTER[0]));
+  }
+  const enriched = getEnrichedData();
+  if (enriched.length > 0) {
+    console.log('Enriched[0]:', JSON.stringify(enriched[0]));
+  }
+  const filtered = applyFilters(enriched);
+
+  updateReportDateBadge();
+  renderBuildingGoal(filtered);
+  renderSummaryCards(filtered);
+  renderAreaBreakdown(filtered);
+  renderScoreCards(filtered);
+  renderFpaLpaTable(filtered);
+  renderRoster();
+}
+
+/* ============================================================
+   Tab Switching
+   ============================================================ */
+
+function switchTab(selectedBtn) {
+  dom.tabButtons().forEach(btn => {
+    const isSelected = btn === selectedBtn;
+    btn.setAttribute('aria-selected', isSelected);
+    btn.setAttribute('tabindex', isSelected ? '0' : '-1');
+  });
+  dom.tabPanels().forEach(panel => {
+    const isActive = panel.id === selectedBtn.getAttribute('aria-controls');
+    panel.setAttribute('aria-hidden', !isActive);
+  });
+}
+
+/* ============================================================
+   Populate Filters
+   ============================================================ */
+
+/**
+ * Dynamically populate filter dropdowns from the current roster.
+ * Called on init and again after every roster upload so options
+ * always reflect whatever areas/shifts/roles are in the data.
+ */
+function populateFilters() {
+  const areaSelect  = dom.areaFilter();
+  const shiftSelect = dom.shiftFilter();
+  const roleSelect  = dom.roleFilter();
+
+  // Remember current selections so we can restore them after rebuild
+  const prevArea  = areaSelect.value;
+  const prevShift = shiftSelect.value;
+  const prevRole  = roleSelect.value;
+
+  // Clear existing options (keep the "All" default)
+  areaSelect.innerHTML  = '<option value="All">All Areas</option>';
+  shiftSelect.innerHTML = '<option value="All">All Shifts</option>';
+  roleSelect.innerHTML  = '<option value="All">All Roles</option>';
+
+  // Extract unique values from the live roster
+  const areas  = [...new Set(ASSOCIATE_ROSTER.map(r => String(r.area || '').trim()).filter(Boolean))].sort();
+  const shifts = [...new Set(ASSOCIATE_ROSTER.map(r => String(r.shift || '').trim()).filter(Boolean))].sort();
+  const roles  = [...new Set(ASSOCIATE_ROSTER.map(r => String(r.role || '').trim()).filter(Boolean))].sort();
+
+  areas.forEach(a => {
+    const opt = document.createElement('option');
+    opt.value = a; opt.textContent = a;
+    areaSelect.appendChild(opt);
+  });
+  shifts.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s; opt.textContent = `${s} Shift`;
+    shiftSelect.appendChild(opt);
+  });
+  roles.forEach(r => {
+    const opt = document.createElement('option');
+    opt.value = r; opt.textContent = r;
+    roleSelect.appendChild(opt);
+  });
+
+  // Restore previous selections if they still exist
+  if (areas.includes(prevArea))   areaSelect.value  = prevArea;
+  if (shifts.includes(prevShift)) shiftSelect.value = prevShift;
+  if (roles.includes(prevRole))   roleSelect.value  = prevRole;
+}
+
+/* ============================================================
+   Init
+   ============================================================ */
+
+document.addEventListener('DOMContentLoaded', () => {
+  populateFilters();
+  // initImportUI is in import.js which loads after SheetJS CDN
+  if (typeof initImportUI === 'function') {
+    initImportUI();
+  } else {
+    // import.js hasn't loaded yet, wait for it
+    window.addEventListener('load', () => {
+      if (typeof initImportUI === 'function') initImportUI();
+    });
+  }
+  renderAll();
+
+  dom.areaFilter().addEventListener('change', renderAll);
+  dom.shiftFilter().addEventListener('change', renderAll);
+  dom.roleFilter().addEventListener('change', renderAll);
+
+  dom.tabButtons().forEach(btn => {
+    btn.addEventListener('click', () => switchTab(btn));
+    btn.addEventListener('keydown', (e) => {
+      const buttons = [...dom.tabButtons()];
+      const idx = buttons.indexOf(btn);
+      let targetIdx = -1;
+      if (e.key === 'ArrowRight') targetIdx = (idx + 1) % buttons.length;
+      if (e.key === 'ArrowLeft')  targetIdx = (idx - 1 + buttons.length) % buttons.length;
+      if (targetIdx >= 0) {
+        e.preventDefault();
+        buttons[targetIdx].focus();
+        switchTab(buttons[targetIdx]);
+      }
+    });
+  });
+});
+
+</script>
+<script>
+/**
+ * DC 6084 — Excel Import Module
+ *
+ * Roster:   Separate upload, saved to localStorage. Persists until replaced.
+ * FPA/LPA:  FPAOF (Orderfillers) + FPALD (Lift Drivers), loaded per session.
+ */
+
+/* Check if SheetJS loaded */
+if (typeof XLSX === 'undefined') {
+  console.warn('SheetJS (XLSX) not loaded. File import will prompt for CSV paste instead.');
+}
+
+const STORAGE_KEY_ROSTER = 'dc6084_roster';
+const STORAGE_KEY_ROSTER_DATE = 'dc6084_roster_date';
+
+// Store the report date extracted from uploaded filenames
+let REPORT_DATE = null;
+
+/* ============================================================
+   Column Mappings
+   ============================================================ */
+
+const ROSTER_COL_MAP = {
+  'user id':      'userId',    'userid':      'userId',    'id':          'userId',
+  'name':         'name',      'associate':   'name',      'full name':   'name',
+  'first name':   'firstName', 'firstname':   'firstName', 'first':       'firstName',
+  'last name':    'lastName',  'lastname':    'lastName',  'last':        'lastName',
+  'area':         'area',      'dept':        'area',      'department':  'area',
+  'shift':        'shift',
+  'role':         'role',      'job':         'role',      'job title':   'role',
+};
+
+const FPA_COL_MAP = {
+  'user id':      'userId',  'userid':      'userId',  'id':           'userId',
+  'user_id':      'userId',  'associate id': 'userId',  'emp id':       'userId',
+  'date':         'date',    'report date':  'date',    'shift date':   'date',
+  'fpa':          'fpaMinutes', 'fpa minutes':  'fpaMinutes', 'fpa mins':  'fpaMinutes',
+  'fpa min':      'fpaMinutes', 'fpa (min)':    'fpaMinutes', 'fpa (mins)':'fpaMinutes',
+  'fpa_minutes':  'fpaMinutes', 'first pick':   'fpaMinutes',
+  'lpa':          'lpaMinutes', 'lpa minutes':  'lpaMinutes', 'lpa mins':  'lpaMinutes',
+  'lpa min':      'lpaMinutes', 'lpa (min)':    'lpaMinutes', 'lpa (mins)':'lpaMinutes',
+  'lpa_minutes':  'lpaMinutes', 'last pick':    'lpaMinutes',
+};
+/* ============================================================
+   Helpers
+   ============================================================ */
+
+/**
+ * Extract a date from a filename like "FPAOF_2026-02-18.xlsx" or "report 2026-02-18.csv"
+ * Returns a Date object if found, null otherwise.
+ */
+function extractDateFromFilename(filename) {
+  if (!filename) return null;
+  
+  // Look for YYYY-MM-DD pattern in filename
+  const match = filename.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (match) {
+    const [, year, month, day] = match;
+    const d = new Date(`${year}-${month}-${day}T00:00:00`);
+    if (!isNaN(d.getTime())) {
+      console.log('Extracted date from filename:', filename, '→', d.toDateString());
+      return d;
+    }
+  }
+  
+  // Also try MM-DD-YYYY or MM/DD/YYYY patterns
+  const altMatch = filename.match(/(\d{2})[\-\/](\d{2})[\-\/](\d{4})/);
+  if (altMatch) {
+    const [, month, day, year] = altMatch;
+    const d = new Date(`${year}-${month}-${day}T00:00:00`);
+    if (!isNaN(d.getTime())) {
+      console.log('Extracted date from filename (alt format):', filename, '→', d.toDateString());
+      return d;
+    }
+  }
+  
+  return null;
+}
+
+function mapHeaders(rawHeaders, colMap) {
+  return rawHeaders.map(h => colMap[String(h).trim().toLowerCase()] || null);
+}
+
+function rowToObject(row, mappedHeaders) {
+  const obj = {};
+  mappedHeaders.forEach((field, i) => {
+    if (field && i < row.length) obj[field] = row[i] != null ? String(row[i]).trim() : '';
+  });
+  return obj;
+}
+
+function normalizeArea(raw) {
+  if (!raw) return raw;
+  return String(raw).trim();
+}
+
+function normalizeShift(raw) {
+  if (!raw) return raw;
+  const num = String(raw).replace(/\D/g, '');
+  return { '1':'1st', '2':'2nd', '4':'4th', '5':'5th' }[num] || raw;
+}
+
+function normalizeDate(raw) {
+  if (!raw) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+  const d = new Date(raw);
+  return !isNaN(d.getTime()) ? d.toISOString().split('T')[0] : raw;
+}
+
+function readFileAsArray(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => resolve(new Uint8Array(e.target.result));
+    reader.onerror = () => reject(new Error(`Failed to read ${file.name}`));
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+function readFileAsText(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => resolve(e.target.result);
+    reader.onerror = () => reject(new Error(`Failed to read ${file.name}`));
+    reader.readAsText(file);
+  });
+}
+
+/** Parse CSV text into array of arrays (handles quoted fields) */
+function parseCsvText(text) {
+  const rows = [];
+  const lines = text.split(/\r?\n/);
+  for (const line of lines) {
+    if (line.trim() === '') continue;
+    const cells = [];
+    let current = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (inQuotes) {
+        if (ch === '"' && line[i + 1] === '"') { current += '"'; i++; }
+        else if (ch === '"') { inQuotes = false; }
+        else { current += ch; }
+      } else {
+        if (ch === '"') { inQuotes = true; }
+        else if (ch === ',') { cells.push(current.trim()); current = ''; }
+        else { current += ch; }
+      }
+    }
+    cells.push(current.trim());
+    rows.push(cells);
+  }
+  return rows;
+}
+
+function getFirstSheetRows(data, file) {
+  // If it's a CSV file, parse directly without SheetJS
+  if (file && /\.csv$/i.test(file.name)) {
+    const decoder = new TextDecoder('utf-8');
+    const text = decoder.decode(data);
+    return parseCsvText(text);
+  }
+  // For Excel files, need SheetJS
+  if (typeof XLSX === 'undefined') {
+    throw new Error('SheetJS library not loaded (CDN may be blocked). Try using .csv files instead, or contact IT.');
+  }
+  const wb = XLSX.read(data, { type: 'array', cellDates: true });
+  return XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1 });
+}
+
+/* ============================================================
+   Parsers
+   ============================================================ */
+
+function parseRoster(rows) {
+  if (rows.length < 2) return [];
+  const mapped = mapHeaders(rows[0], ROSTER_COL_MAP);
+  return rows.slice(1)
+    .filter(r => r.length > 0 && r.some(c => c != null && c !== ''))
+    .map(r => {
+      const obj = rowToObject(r, mapped);
+      obj.userId = String(obj.userId || '').trim();
+
+      // Support both "Name" (single col) and "First Name" + "Last Name" (two cols)
+      const first = String(obj.firstName || '').trim();
+      const last  = String(obj.lastName  || '').trim();
+      const full  = String(obj.name      || '').trim();
+
+      if (first || last) {
+        obj.name = `${first} ${last}`.trim();
+      } else {
+        obj.name = full;
+      }
+
+      // Store split names directly so we never have to re-split
+      if (first) {
+        obj.firstName = first;
+        obj.lastName  = last;
+      } else if (full) {
+        const parts   = full.split(/\s+/);
+        obj.firstName = parts[0] || '';
+        obj.lastName  = parts.slice(1).join(' ') || '';
+      } else {
+        obj.firstName = '';
+        obj.lastName  = '';
+      }
+
+      obj.area  = normalizeArea(obj.area || '');
+      obj.shift = normalizeShift(obj.shift || '');
+      obj.role  = String(obj.role || '').trim();
+      return obj;
+    })
+    .filter(o => o.userId);
+}
+
+/**
+ * Convert a time value to whole minutes.
+ * Handles multiple formats from Excel/CSV reports:
+ *   - "00:12:23" (HH:MM:SS) → 12 min
+ *   - "12:23"    (MM:SS)    → 12 min
+ *   - "16"       (plain)    → 16 min
+ *   - 0.00860... (Excel serial time, e.g. 12m23s ≈ 0.00859) → 12 min
+ *   - Date object from SheetJS (cellDates:true) → extract minutes
+ *   - "16.5"     (decimal minutes) → 17 min (rounded)
+ */
+function parseTimeToMinutes(raw) {
+  if (raw == null || raw === '') return 0;
+
+  // If it's a Date object (SheetJS cellDates:true), extract HH:MM:SS
+  if (raw instanceof Date) {
+    const h = raw.getUTCHours();
+    const m = raw.getUTCMinutes();
+    const s = raw.getUTCSeconds();
+    return Math.round(h * 60 + m + s / 60);
+  }
+
+  const str = String(raw).trim();
+
+  // HH:MM:SS format — "00:12:23" → 12 minutes (rounded with seconds)
+  const hmsMatch = str.match(/^(\d{1,2}):(\d{2}):(\d{2})$/);
+  if (hmsMatch) {
+    const h = parseInt(hmsMatch[1], 10);
+    const m = parseInt(hmsMatch[2], 10);
+    const s = parseInt(hmsMatch[3], 10);
+    return Math.round(h * 60 + m + s / 60);
+  }
+
+  // MM:SS format — "12:23" → 12 minutes (rounded with seconds)
+  const msMatch = str.match(/^(\d{1,3}):(\d{2})$/);
+  if (msMatch) {
+    const m = parseInt(msMatch[1], 10);
+    const s = parseInt(msMatch[2], 10);
+    return Math.round(m + s / 60);
+  }
+
+  // Plain number or decimal — could be minutes or Excel serial time
+  const num = parseFloat(str);
+  if (isNaN(num)) return 0;
+
+  // Excel serial time: 1.0 = 24 hours, so values < 1.0 are fractions of a day
+  // 12 minutes = 12/(24*60) ≈ 0.00833
+  // If the number is less than 1, treat as Excel serial time
+  if (num > 0 && num < 1) {
+    const totalMinutes = num * 24 * 60;
+    return Math.round(totalMinutes);
+  }
+
+  // Otherwise it's already in minutes
+  return Math.round(num);
+}
+
+function parseFpaLpa(rows, role) {
+  if (rows.length < 2) return [];
+  const mapped = mapHeaders(rows[0], FPA_COL_MAP);
+  console.log('FPA/LPA column mapping:', rows[0].map((h, i) => `"${h}" → ${mapped[i] || 'UNMAPPED'}`));
+
+  // Warn if critical columns are missing
+  if (!mapped.includes('userId'))     console.warn('⚠️ No User ID column found!');
+  if (!mapped.includes('fpaMinutes')) console.warn('⚠️ No FPA column found!');
+  if (!mapped.includes('lpaMinutes')) console.warn('⚠️ No LPA column found!');
+
+  return rows.slice(1)
+    .filter(r => r.length > 0 && r.some(c => c != null && c !== ''))
+    .map(r => {
+      const obj = rowToObject(r, mapped);
+      obj.userId     = String(obj.userId || '').trim();
+      obj.date       = normalizeDate(obj.date || '');
+
+      // Get raw cell values for FPA/LPA (could be Date objects from SheetJS)
+      const fpaIdx = mapped.indexOf('fpaMinutes');
+      const lpaIdx = mapped.indexOf('lpaMinutes');
+      const rawFpa = fpaIdx >= 0 && fpaIdx < r.length ? r[fpaIdx] : obj.fpaMinutes;
+      const rawLpa = lpaIdx >= 0 && lpaIdx < r.length ? r[lpaIdx] : obj.lpaMinutes;
+
+      // Handle time formats: "00:12:23", "12:23", "16", Excel serial time, Date objects
+      obj.fpaMinutes = parseTimeToMinutes(rawFpa);
+      obj.lpaMinutes = parseTimeToMinutes(rawLpa);
+      console.log(`Parsed ${obj.userId}: FPA raw="${rawFpa}" → ${obj.fpaMinutes}min, LPA raw="${rawLpa}" → ${obj.lpaMinutes}min`);
+      obj.role       = role;
+      return obj;
+    })
+    .filter(o => o.userId);
+}
+
+/* ============================================================
+   Roster — Upload & Persist to localStorage
+   ============================================================ */
+
+function saveRosterToStorage(rosterArray) {
+  try {
+    localStorage.setItem(STORAGE_KEY_ROSTER, JSON.stringify(rosterArray));
+    localStorage.setItem(STORAGE_KEY_ROSTER_DATE, new Date().toLocaleString());
+  } catch (e) {
+    console.warn('Could not save roster to localStorage:', e);
+  }
+}
+
+function loadRosterFromStorage() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY_ROSTER);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // Only use saved roster if entries actually have names
+      if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].name) {
+        ASSOCIATE_ROSTER.length = 0;
+        parsed.forEach(r => ASSOCIATE_ROSTER.push(r));
+        console.log('Loaded roster from localStorage:', parsed.length, 'associates');
+        console.log('Sample entry:', parsed[0]);
+        return true;
+      } else {
+        // Bad data in storage — clear it
+        console.warn('Clearing bad roster from localStorage');
+        localStorage.removeItem(STORAGE_KEY_ROSTER);
+        localStorage.removeItem(STORAGE_KEY_ROSTER_DATE);
+      }
+    }
+  } catch (e) {
+    console.warn('Could not load roster from localStorage:', e);
+    localStorage.removeItem(STORAGE_KEY_ROSTER);
+    localStorage.removeItem(STORAGE_KEY_ROSTER_DATE);
+  }
+  return false;
+}
+
+function getRosterStatusText() {
+  const date = localStorage.getItem(STORAGE_KEY_ROSTER_DATE);
+  if (date) {
+    return `\u2705 Roster loaded (uploaded ${date}) \u2014 ${ASSOCIATE_ROSTER.length} associates`;
+  }
+  return '\u26a0\ufe0f Using sample roster. Upload a real roster to get started.';
+}
+
+function updateRosterStatus() {
+  const el = document.getElementById('roster-status');
+  const date = localStorage.getItem(STORAGE_KEY_ROSTER_DATE);
+  el.innerHTML = getRosterStatusText();
+  el.className = `roster-status ${date ? 'roster-ok' : 'roster-warn'}`;
+}
+
+async function handleRosterUpload(file) {
+  try {
+    const data = await readFileAsArray(file);
+    const rows = getFirstSheetRows(data, file);
+    console.log('Roster headers:', rows[0]);
+    console.log('Roster row count:', rows.length - 1);
+    const parsed = parseRoster(rows);
+
+    if (parsed.length === 0) {
+      showImportStatus('\u274c Roster: no valid rows found. Check column headers (need: User ID, Name or First Name/Last Name, Area, Shift, Role).', false);
+      return;
+    }
+
+    console.log('Parsed roster sample:', parsed[0]);
+    ASSOCIATE_ROSTER.length = 0;
+    parsed.forEach(r => ASSOCIATE_ROSTER.push(r));
+    saveRosterToStorage(parsed);
+    updateRosterStatus();
+    populateFilters();
+    showImportStatus(`\u2705 Roster saved! ${parsed.length} associates loaded. This will persist until you upload a new one.`, true);
+    renderAll();
+  } catch (err) {
+    console.error('Roster upload error:', err);
+    showImportStatus(`\u274c Roster upload failed: ${err.message}`, false);
+  }
+}
+
+/* ============================================================
+   FPA/LPA — Load FPAOF + FPALD
+   ============================================================ */
+
+async function runImport() {
+  const fpaofInput = document.getElementById('file-fpaof');
+  const fpaldInput = document.getElementById('file-fpald');
+  const msgs = [];
+  let ok = false;
+  const fpaRecords = [];
+  let extractedDate = null;
+
+  try {
+    if (fpaofInput.files.length > 0) {
+      const file = fpaofInput.files[0];
+      console.log('FPAOF file:', file.name, file.type, file.size, 'bytes');
+      
+      // Extract date from filename
+      const fileDate = extractDateFromFilename(file.name);
+      if (fileDate && !extractedDate) extractedDate = fileDate;
+      
+      const data = await readFileAsArray(file);
+      const rows = getFirstSheetRows(data, file);
+      console.log('FPAOF headers found:', rows[0]);
+      console.log('FPAOF data rows:', rows.length - 1);
+      if (rows.length > 1) console.log('FPAOF first data row:', rows[1]);
+      const parsed = parseFpaLpa(rows, 'Orderfiller');
+      console.log('FPAOF parsed records:', parsed.length);
+      if (parsed.length > 0) console.log('FPAOF sample:', parsed[0]);
+      fpaRecords.push(...parsed);
+      msgs.push(`\u2705 FPAOF: ${parsed.length} orderfiller records loaded`);
+      ok = true;
+    }
+
+    if (fpaldInput.files.length > 0) {
+      const file = fpaldInput.files[0];
+      console.log('FPALD file:', file.name, file.type, file.size, 'bytes');
+      
+      // Extract date from filename
+      const fileDate = extractDateFromFilename(file.name);
+      if (fileDate && !extractedDate) extractedDate = fileDate;
+      
+      const data = await readFileAsArray(file);
+      const rows = getFirstSheetRows(data, file);
+      console.log('FPALD headers found:', rows[0]);
+      console.log('FPALD data rows:', rows.length - 1);
+      if (rows.length > 1) console.log('FPALD first data row:', rows[1]);
+      const parsed = parseFpaLpa(rows, 'Lift Driver');
+      console.log('FPALD parsed records:', parsed.length);
+      if (parsed.length > 0) console.log('FPALD sample:', parsed[0]);
+      fpaRecords.push(...parsed);
+      msgs.push(`\u2705 FPALD: ${parsed.length} lift driver records loaded`);
+      ok = true;
+    }
+
+    // Store the extracted report date
+    if (extractedDate) {
+      REPORT_DATE = extractedDate;
+      console.log('Report date set from filename:', REPORT_DATE.toDateString());
+    }
+
+    if (fpaRecords.length > 0) {
+      FPA_LPA_DATA.length = 0;
+      fpaRecords.forEach(r => FPA_LPA_DATA.push(r));
+      console.log('FPA_LPA_DATA populated:', FPA_LPA_DATA.length, 'total records');
+
+      // Check roster matching
+      const rosterIds = new Set(ASSOCIATE_ROSTER.map(r => String(r.userId).trim().toUpperCase()));
+      const matchedIds = fpaRecords.filter(r => rosterIds.has(String(r.userId).trim().toUpperCase()));
+      const unmatchedIds = [...new Set(
+        fpaRecords
+          .filter(r => !rosterIds.has(String(r.userId).trim().toUpperCase()))
+          .map(r => r.userId)
+      )];
+
+      msgs.push(`\ud83d\udd17 ${matchedIds.length} of ${fpaRecords.length} records matched to roster`);
+
+      if (unmatchedIds.length > 0) {
+        msgs.push(`\u26a0\ufe0f ${unmatchedIds.length} User ID(s) not in Roster: ${unmatchedIds.slice(0, 5).join(', ')}${unmatchedIds.length > 5 ? '...' : ''}`);
+      }
+    }
+
+    if (msgs.length === 0) msgs.push('\u26a0\ufe0f No files selected.');
+    showImportStatus(msgs.join('<br>'), ok);
+    if (ok) renderAll();
+
+  } catch (err) {
+    console.error('Import error:', err);
+    showImportStatus(`\u274c Import failed: ${err.message}`, false);
+  }
+}
+
+/* ============================================================
+   UI Helpers
+   ============================================================ */
+
+function showImportStatus(html, success) {
+  const el = document.getElementById('import-status');
+  el.innerHTML = html;
+  el.className = `import-status ${success ? 'import-ok' : 'import-err'}`;
+  el.style.display = 'block';
+  // Keep errors visible until next action; auto-hide success after 15s
+  if (success) {
+    setTimeout(() => { el.style.display = 'none'; }, 15000);
+  }
+}
+
+function openImportModal() {
+  document.getElementById('import-modal').setAttribute('aria-hidden', 'false');
+  document.getElementById('import-modal-overlay').style.display = 'block';
+  document.getElementById('file-fpaof').value = '';
+  document.getElementById('file-fpald').value = '';
+}
+
+function closeImportModal() {
+  document.getElementById('import-modal').setAttribute('aria-hidden', 'true');
+  document.getElementById('import-modal-overlay').style.display = 'none';
+}
+
+/* ============================================================
+   Init
+   ============================================================ */
+
+function initImportUI() {
+  // Load saved roster from localStorage on startup
+  loadRosterFromStorage();
+  updateRosterStatus();
+  populateFilters();
+
+  // Clear roster button
+  document.getElementById('btn-clear-roster').addEventListener('click', () => {
+    localStorage.removeItem(STORAGE_KEY_ROSTER);
+    localStorage.removeItem(STORAGE_KEY_ROSTER_DATE);
+    ASSOCIATE_ROSTER.length = 0;
+    SAMPLE_ROSTER.forEach(r => ASSOCIATE_ROSTER.push(r));
+    updateRosterStatus();
+    populateFilters();
+    showImportStatus('\u2705 Reset to sample roster. Upload a real roster when ready.', true);
+    renderAll();
+  });
+
+  // Roster upload button
+  const rosterBtn   = document.getElementById('btn-upload-roster');
+  const rosterInput = document.getElementById('file-roster');
+
+  rosterBtn.addEventListener('click', () => rosterInput.click());
+  rosterInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) handleRosterUpload(e.target.files[0]);
+    e.target.value = '';
+  });
+
+  // FPA/LPA modal
+  document.getElementById('btn-open-import').addEventListener('click', openImportModal);
+  document.getElementById('btn-close-modal').addEventListener('click', closeImportModal);
+  document.getElementById('btn-run-import').addEventListener('click', async () => {
+    await runImport();
+    closeImportModal();
+  });
+
+  document.getElementById('import-modal-overlay').addEventListener('click', closeImportModal);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeImportModal(); });
+}
+
+</script>
+  <script async src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" 
+          onerror="console.warn('SheetJS CDN blocked - CSV-only mode');"></script>
+</body>
+</html>
