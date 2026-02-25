@@ -29,7 +29,7 @@
     "lpa"
   ],
   "entry": "index.html",
-  "homepage": "https://puppy.walmart.com",
+  "homepage": "https://kenai26.github.io/fpa-lpa-dasboard/",
   "repository": {
     "type": "git",
     "url": "https://github.com/Kenai26/fpa-lpa-dasboard.git"
@@ -119,8 +119,8 @@
     "performanceScore": "98%"
   },
   "internalOnly": true,
-  "published": false,
-  "status": "ready-for-review",
+  "published": true,
+  "status": "published",
   "createdAt": "2026-02-13",
   "updatedAt": "2026-02-24T08:23:32Z",
   "publishingChecklist": {
