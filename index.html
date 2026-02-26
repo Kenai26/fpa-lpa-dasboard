@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DC 6084 — FPA / LPA Dashboard</title>
-  <link rel="stylesheet" href="styles.css?v=5">
+  <link rel="stylesheet" href="styles.css?v=4">
 </head>
 <body>
 
@@ -63,7 +63,7 @@
     <div class="filter-group">
       <label>Roster</label>
       <button id="btn-upload-roster" class="btn-roster" type="button">
-        👥 Load Roster
+        👥 Upload Roster
       </button>
       <input type="file" id="file-roster" accept=".xlsx,.xls,.csv" class="sr-only">
     </div>
@@ -86,27 +86,6 @@
   <!-- Import Status -->
   <div id="import-status" class="import-status" style="display:none;" role="alert"></div>
 
-  <!-- Roster Modal Overlay -->
-  <div id="roster-paste-overlay" class="modal-overlay" style="display:none;"></div>
-
-  <!-- Roster Modal -->
-  <div id="roster-paste-modal" class="modal" aria-hidden="true" role="dialog"
-       aria-labelledby="roster-paste-title">
-    <div class="modal-header">
-      <h2 id="roster-paste-title">👥 Load Roster</h2>
-      <button id="btn-close-roster-paste" class="modal-close" aria-label="Close">&times;</button>
-    </div>
-    <div class="modal-body">
-      <p class="modal-desc">Paste your roster CSV data below. Required columns: <strong>User ID, First Name, Last Name, Area, Shift, Role</strong>.<br>
-        <em>💡 Open your CSV/Excel, select all (Ctrl+A), copy (Ctrl+C), then paste below.</em></p>
-      <textarea id="roster-paste-area" class="paste-area" rows="12" 
-                placeholder="User ID,First Name,Last Name,Area,Shift,Role&#10;D6-1001,John,Smith,Dry 1st,1st,Orderfiller&#10;D6-1002,Jane,Doe,Dry 1st,1st,Lift Driver&#10;D6-1003,Mike,Johnson,FDD 2nd,2nd,Orderfiller"></textarea>
-    </div>
-    <div class="modal-footer">
-      <button id="btn-import-roster-paste" class="btn-primary" type="button">✅ Import Roster</button>
-    </div>
-  </div>
-
   <!-- Import Modal Overlay -->
   <div id="import-modal-overlay" class="modal-overlay" style="display:none;"></div>
 
@@ -118,32 +97,29 @@
       <button id="btn-close-modal" class="modal-close" aria-label="Close">&times;</button>
     </div>
     <div class="modal-body">
-      <p class="modal-desc">Paste your FPAOF &amp; FPALD report CSV data below.<br>
-        Names are matched from the saved <strong>Roster</strong> using User ID.<br>
-        <em>💡 Open your CSV/Excel, select all (Ctrl+A), copy (Ctrl+C), then paste below.</em></p>
+      <p class="modal-desc">Select FPAOF &amp; FPALD report files. Accepts <strong>.xlsx</strong>, <strong>.xls</strong>, or <strong>.csv</strong>.<br>
+        Names are matched from the saved <strong>Roster</strong> using User ID.</p>
 
       <div class="modal-file-group">
-        <label class="modal-file-label">
+        <label for="file-fpaof" class="modal-file-label">
           <span class="modal-file-icon">📦</span>
           <span class="modal-file-text">
             <strong>FPAOF</strong> (Orderfillers)
-            <small>User ID, Date, FPA Minutes, LPA Minutes</small>
+            <small>User ID, Date, FPA Minutes, LPA Minutes — names pulled from Roster</small>
           </span>
         </label>
-        <textarea id="fpaof-paste-area" class="paste-area" rows="8" 
-                  placeholder="User ID,Date,FPA Minutes,LPA Minutes&#10;D6-1001,2026-02-18,12,11&#10;D6-1002,2026-02-18,16,13"></textarea>
+        <input type="file" id="file-fpaof" accept=".xlsx,.xls,.csv" class="modal-file-input">
       </div>
 
       <div class="modal-file-group">
-        <label class="modal-file-label">
+        <label for="file-fpald" class="modal-file-label">
           <span class="modal-file-icon">🚜</span>
           <span class="modal-file-text">
             <strong>FPALD</strong> (Lift Drivers)
-            <small>User ID, Date, FPA Minutes, LPA Minutes</small>
+            <small>User ID, Date, FPA Minutes, LPA Minutes — names pulled from Roster</small>
           </span>
         </label>
-        <textarea id="fpald-paste-area" class="paste-area" rows="8" 
-                  placeholder="User ID,Date,FPA Minutes,LPA Minutes&#10;D6-1003,2026-02-18,10,14&#10;D6-1005,2026-02-18,15,12"></textarea>
+        <input type="file" id="file-fpald" accept=".xlsx,.xls,.csv" class="modal-file-input">
       </div>
     </div>
     <div class="modal-footer">
@@ -308,10 +284,17 @@
   </div>
 
   <!-- Scripts -->
-  <script src="data.js?v=5"></script>
-  <script src="app.js?v=5"></script>
-  <script src="import.js?v=5"></script>
-  <script async src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" 
-          onerror="console.warn('SheetJS CDN blocked - CSV-only mode');"></script>
+  <script src="data.js?v=4"></script>
+  <script src="app.js?v=4"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" 
+          onerror="console.warn('SheetJS CDN blocked - import will use fallback');"></script>
+  <script src="import.js?v=3"></script>
+  <script>
+    // Diagnostic: verify data loaded
+    console.log('Roster count:', ASSOCIATE_ROSTER.length);
+    console.log('FPA/LPA count:', FPA_LPA_DATA.length);
+    if (ASSOCIATE_ROSTER.length > 0) console.log('First roster entry:', ASSOCIATE_ROSTER[0]);
+    if (FPA_LPA_DATA.length > 0) console.log('First FPA entry:', FPA_LPA_DATA[0]);
+  </script>
 </body>
 </html>

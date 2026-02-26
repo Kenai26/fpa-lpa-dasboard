@@ -415,67 +415,6 @@ tr.row--off-goal:hover {
   border-left: 4px solid var(--wm-blue);
 }
 
-/* ----- Paste Fallback ----- */
-.btn-paste {
-  padding: 8px 20px;
-  border: 2px solid var(--wm-blue);
-  border-radius: var(--border-radius);
-  font-size: 0.95rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background 0.2s;
-  white-space: nowrap;
-  color: var(--wm-blue);
-  background: var(--wm-white);
-}
-
-.btn-paste:hover {
-  background: var(--wm-blue-light);
-}
-
-.paste-area {
-  width: 100%;
-  padding: 10px;
-  border: 2px solid var(--wm-gray-200);
-  border-radius: 6px;
-  font-family: 'Courier New', monospace;
-  font-size: 0.85rem;
-  resize: vertical;
-  line-height: 1.4;
-  color: var(--color-text);
-  background: var(--wm-gray-100);
-}
-
-.paste-area:focus {
-  border-color: var(--wm-blue);
-  outline: 3px solid rgba(0, 83, 226, 0.2);
-}
-
-.paste-area::placeholder {
-  color: #999;
-  font-style: italic;
-}
-
-.paste-details {
-  margin-top: 8px;
-}
-
-.paste-details summary {
-  cursor: pointer;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--wm-blue);
-  padding: 4px 0;
-}
-
-.paste-details summary:hover {
-  text-decoration: underline;
-}
-
-.paste-details .paste-area {
-  margin-top: 6px;
-}
-
 /* ----- Upload Buttons ----- */
 .btn-roster,
 .btn-import {

@@ -302,40 +302,6 @@ function parseFpaLpa(rows, role) {
 }
 
 /* ============================================================
-   Roster — Paste CSV Fallback
-   ============================================================ */
-
-function handleRosterPaste(csvText) {
-  try {
-    if (!csvText || !csvText.trim()) {
-      showImportStatus('\u274c No data pasted. Please paste your roster CSV.', false);
-      return;
-    }
-    const rows = parseCsvText(csvText);
-    console.log('Pasted roster headers:', rows[0]);
-    console.log('Pasted roster row count:', rows.length - 1);
-    const parsed = parseRoster(rows);
-
-    if (parsed.length === 0) {
-      showImportStatus('\u274c Roster: no valid rows found. Check column headers (need: User ID, Name or First Name/Last Name, Area, Shift, Role).', false);
-      return;
-    }
-
-    console.log('Parsed roster sample:', parsed[0]);
-    ASSOCIATE_ROSTER.length = 0;
-    parsed.forEach(r => ASSOCIATE_ROSTER.push(r));
-    saveRosterToStorage(parsed);
-    updateRosterStatus();
-    populateFilters();
-    showImportStatus(`\u2705 Roster saved! ${parsed.length} associates loaded from pasted data.`, true);
-    renderAll();
-  } catch (err) {
-    console.error('Roster paste error:', err);
-    showImportStatus(`\u274c Roster paste failed: ${err.message}`, false);
-  }
-}
-
-/* ============================================================
    Roster — Upload & Persist to localStorage
    ============================================================ */
 
@@ -422,31 +388,51 @@ async function handleRosterUpload(file) {
    ============================================================ */
 
 async function runImport() {
-  const fpaofPaste = document.getElementById('fpaof-paste-area');
-  const fpaldPaste = document.getElementById('fpald-paste-area');
+  const fpaofInput = document.getElementById('file-fpaof');
+  const fpaldInput = document.getElementById('file-fpald');
   const msgs = [];
   let ok = false;
   const fpaRecords = [];
   let extractedDate = null;
 
   try {
-    // FPAOF: paste data
-    if (fpaofPaste && fpaofPaste.value.trim()) {
-      const rows = parseCsvText(fpaofPaste.value);
-      console.log('FPAOF pasted headers:', rows[0]);
+    if (fpaofInput.files.length > 0) {
+      const file = fpaofInput.files[0];
+      console.log('FPAOF file:', file.name, file.type, file.size, 'bytes');
+      
+      // Extract date from filename
+      const fileDate = extractDateFromFilename(file.name);
+      if (fileDate && !extractedDate) extractedDate = fileDate;
+      
+      const data = await readFileAsArray(file);
+      const rows = getFirstSheetRows(data, file);
+      console.log('FPAOF headers found:', rows[0]);
+      console.log('FPAOF data rows:', rows.length - 1);
+      if (rows.length > 1) console.log('FPAOF first data row:', rows[1]);
       const parsed = parseFpaLpa(rows, 'Orderfiller');
       console.log('FPAOF parsed records:', parsed.length);
+      if (parsed.length > 0) console.log('FPAOF sample:', parsed[0]);
       fpaRecords.push(...parsed);
       msgs.push(`\u2705 FPAOF: ${parsed.length} orderfiller records loaded`);
       ok = true;
     }
 
-    // FPALD: paste data
-    if (fpaldPaste && fpaldPaste.value.trim()) {
-      const rows = parseCsvText(fpaldPaste.value);
-      console.log('FPALD pasted headers:', rows[0]);
+    if (fpaldInput.files.length > 0) {
+      const file = fpaldInput.files[0];
+      console.log('FPALD file:', file.name, file.type, file.size, 'bytes');
+      
+      // Extract date from filename
+      const fileDate = extractDateFromFilename(file.name);
+      if (fileDate && !extractedDate) extractedDate = fileDate;
+      
+      const data = await readFileAsArray(file);
+      const rows = getFirstSheetRows(data, file);
+      console.log('FPALD headers found:', rows[0]);
+      console.log('FPALD data rows:', rows.length - 1);
+      if (rows.length > 1) console.log('FPALD first data row:', rows[1]);
       const parsed = parseFpaLpa(rows, 'Lift Driver');
       console.log('FPALD parsed records:', parsed.length);
+      if (parsed.length > 0) console.log('FPALD sample:', parsed[0]);
       fpaRecords.push(...parsed);
       msgs.push(`\u2705 FPALD: ${parsed.length} lift driver records loaded`);
       ok = true;
@@ -507,10 +493,8 @@ function showImportStatus(html, success) {
 function openImportModal() {
   document.getElementById('import-modal').setAttribute('aria-hidden', 'false');
   document.getElementById('import-modal-overlay').style.display = 'block';
-  const fpaofPaste = document.getElementById('fpaof-paste-area');
-  const fpaldPaste = document.getElementById('fpald-paste-area');
-  if (fpaofPaste) fpaofPaste.value = '';
-  if (fpaldPaste) fpaldPaste.value = '';
+  document.getElementById('file-fpaof').value = '';
+  document.getElementById('file-fpald').value = '';
 }
 
 function closeImportModal() {
@@ -544,41 +528,11 @@ function initImportUI() {
   const rosterBtn   = document.getElementById('btn-upload-roster');
   const rosterInput = document.getElementById('file-roster');
 
-  // Roster button opens paste modal
-  const rosterBtn   = document.getElementById('btn-upload-roster');
-  const rosterInput = document.getElementById('file-roster');
-
-  rosterBtn.addEventListener('click', () => {
-    document.getElementById('roster-paste-modal').setAttribute('aria-hidden', 'false');
-    document.getElementById('roster-paste-overlay').style.display = 'block';
-    const area = document.getElementById('roster-paste-area');
-    if (area) area.value = '';
+  rosterBtn.addEventListener('click', () => rosterInput.click());
+  rosterInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) handleRosterUpload(e.target.files[0]);
+    e.target.value = '';
   });
-  // Keep file input as hidden fallback for local use
-  if (rosterInput) {
-    rosterInput.addEventListener('change', (e) => {
-      if (e.target.files.length > 0) handleRosterUpload(e.target.files[0]);
-      e.target.value = '';
-    });
-  }
-
-  // Roster paste modal handlers
-  const closeRosterPaste = () => {
-    document.getElementById('roster-paste-modal').setAttribute('aria-hidden', 'true');
-    document.getElementById('roster-paste-overlay').style.display = 'none';
-  };
-  const btnCloseRosterPaste = document.getElementById('btn-close-roster-paste');
-  if (btnCloseRosterPaste) btnCloseRosterPaste.addEventListener('click', closeRosterPaste);
-  const rosterPasteOverlay = document.getElementById('roster-paste-overlay');
-  if (rosterPasteOverlay) rosterPasteOverlay.addEventListener('click', closeRosterPaste);
-  const btnImportRosterPaste = document.getElementById('btn-import-roster-paste');
-  if (btnImportRosterPaste) {
-    btnImportRosterPaste.addEventListener('click', () => {
-      const area = document.getElementById('roster-paste-area');
-      if (area) handleRosterPaste(area.value);
-      closeRosterPaste();
-    });
-  }
 
   // FPA/LPA modal
   document.getElementById('btn-open-import').addEventListener('click', openImportModal);
